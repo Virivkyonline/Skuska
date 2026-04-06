@@ -350,8 +350,7 @@
           status.textContent = 'Formulár bol úspešne odoslaný.';
           document.getElementById('contactForm').reset();
         } else {
-          status.textContent = 'Chyba: ' + (data.error || 'Odoslanie zlyhalo.');
-        }
+          status.textContent = 'Chyba: ' + (data.detail || data.error || 'Odoslanie zlyhalo.');
       } catch (error) {
         status.textContent = 'Chyba spojenia so serverom.';
       }
