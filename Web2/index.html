@@ -88,9 +88,7 @@
       transition: all 0.22s ease;
     }
 
-    button {
-      cursor: pointer;
-    }
+    button { cursor: pointer; }
 
     .top-buttons button,
     .form-buttons button,
@@ -455,13 +453,8 @@
       .title-panel h1 { font-size: 48px; }
       .title-panel p { font-size: 20px; }
 
-      .top-buttons {
-        flex-direction: row;
-      }
-
-      .top-buttons button {
-        flex: 1;
-      }
+      .top-buttons { flex-direction: row; }
+      .top-buttons button { flex: 1; }
 
       .center-panel { padding: 36px 30px; }
       .center-panel h2 { font-size: 32px; }
@@ -479,7 +472,6 @@
 </head>
 <body>
   <div class="page">
-
     <div class="title-panel">
       <h1>PLATINUM LECH SPA</h1>
       <p>KVALITNÉ VÍRIVKY NA PREDAJ</p>
@@ -493,7 +485,6 @@
     </div>
 
     <div class="content">
-
       <div id="home-page">
         <div class="center-panel">
           <h2>Prečo si vybrať nás</h2>
@@ -523,7 +514,6 @@
 
           <div class="menu-box">
             <p id="feed-status">Načítavam kategórie a produkty...</p>
-
             <div id="categoryButtons" class="category-buttons"></div>
 
             <div class="products-section">
@@ -593,6 +583,7 @@
             <div class="cart-buttons">
               <button type="submit">Odoslať objednávku</button>
               <button type="button" onclick="clearCart()">Vymazať košík</button>
+              <button type="button" onclick="clearCustomerData()">Vymazať údaje zákazníka</button>
               <button type="button" onclick="showPage('home-page')">Späť na produkty</button>
             </div>
           </form>
@@ -600,7 +591,6 @@
           <p id="order-status"></p>
         </div>
       </div>
-
     </div>
 
     <div class="logo-bottom">
@@ -760,7 +750,7 @@
     function normalizeBaseTitle(title) {
       return (title || '')
         .replace(/\s+/g, ' ')
-        .replace(/\([^)]*\)/g, '')
+        .replace(/[^)]*/g, '')
         .replace(/farba\s+oblozenia.*$/i, '')
         .replace(/farba\s+akrylu.*$/i, '')
         .replace(/oblozenie.*$/i, '')
@@ -892,7 +882,7 @@
       const buttons = Array.from(wrap.querySelectorAll('button'));
 
       buttons.forEach(btn => {
-        const clean = btn.textContent.replace(/\s+\(\d+\)$/, '');
+        const clean = btn.textContent.replace(/\s+\d+$/, '');
         btn.classList.toggle('active', clean === categoryName);
       });
     }
@@ -1187,6 +1177,49 @@
       totalEl.textContent = `Spolu: ${total.toFixed(2)} €`;
     }
 
+    function getCustomerData() {
+      try {
+        return JSON.parse(localStorage.getItem('platinum_customer_data') || '{}');
+      } catch {
+        return {};
+      }
+    }
+
+    function saveCustomerData(data) {
+      localStorage.setItem('platinum_customer_data', JSON.stringify(data));
+    }
+
+    function fillCustomerData() {
+      const data = getCustomerData();
+      const ids = [
+        'order_name',
+        'order_email',
+        'order_phone',
+        'order_street',
+        'order_house_number',
+        'order_zip',
+        'order_city'
+      ];
+
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && data[id]) el.value = data[id];
+      });
+    }
+
+    function clearCustomerData() {
+      localStorage.removeItem('platinum_customer_data');
+      fillCustomerData();
+      document.getElementById('order_name').value = '';
+      document.getElementById('order_email').value = '';
+      document.getElementById('order_phone').value = '';
+      document.getElementById('order_street').value = '';
+      document.getElementById('order_house_number').value = '';
+      document.getElementById('order_zip').value = '';
+      document.getElementById('order_city').value = '';
+      showToast('Údaje zákazníka vymazané');
+    }
+
     async function fetchFeedText() {
       try {
         const direct = await fetch(FEED_URL, { cache: 'no-store' });
@@ -1297,6 +1330,16 @@
         return;
       }
 
+      saveCustomerData({
+        order_name: meno,
+        order_email: email,
+        order_phone: phoneClean,
+        order_street: street,
+        order_house_number: houseNumber,
+        order_zip: zipClean,
+        order_city: city
+      });
+
       const payload = {
         type: 'order',
         meno,
@@ -1325,7 +1368,7 @@
           status.textContent = 'Objednávka bola úspešne odoslaná.';
           localStorage.removeItem('platinum_cart');
           renderCart();
-          document.getElementById('orderForm').reset();
+          document.getElementById('order_note').value = '';
         } else {
           status.textContent = 'Chyba: ' + (data.detail || data.error || 'Odoslanie objednávky zlyhalo.');
         }
@@ -1337,6 +1380,13 @@
     loadFeed();
     renderCart();
     renderFavorites();
+    fillCustomerData();
   </script>
 </body>
 </html>
+'''
+
+from pathlib import Path
+path = Path('/mnt/data/index_with_customer_memory.html')
+path.write_text(html_content, encoding='utf-8')
+print(str(path))
