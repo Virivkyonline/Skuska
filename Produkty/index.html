@@ -16,6 +16,7 @@
       --panel-bg: linear-gradient(180deg, #274a77 0%, #1f3d63 100%);
       --dark-card: rgba(10, 20, 36, 0.45);
       --success-green: #1f9d55;
+      --danger-red: #b91c1c;
     }
 
     * {
@@ -393,7 +394,7 @@
     <div class="content">
       <div class="center-panel">
         <h2>Produkty - Vírivka pre 4-5 osoby</h2>
-        <p id="feed-status">Načítavam XML feed...</p>
+        <p id="feed-status">Načítavam produkty...</p>
 
         <div id="models-grid" class="products-grid"></div>
         <div id="models-empty" class="empty-state" style="display:none;">V tejto kategórii sa zatiaľ nenašli produkty.</div>
@@ -440,70 +441,27 @@
   <div id="toast" class="toast">Pridané do košíka</div>
 
   <script>
-    const FEED_URL = 'https://www.virivkyonline.sk/universal.xml';
-    const FEED_PROXY_URL = 'https://virivkyapp.lechstav.workers.dev/feed?url=' + encodeURIComponent(FEED_URL);
+    const PROXY_BASE = 'https://virivkyapp.lechstav.workers.dev/feed?url=';
+    const PRODUCT_URLS = [
+      'https://www.virivkyonline.sk/virivka-aurora---luxusna-5-miestna-virivka-s-hydromasazou-pre-dom-a-zahradu/',
+      'https://www.virivkyonline.sk/virivka-life-220x220x90cm-prijemny-komfort-a-styl-pre-5-osob/',
+      'https://www.virivkyonline.sk/virivka-model-split-200x200x90cm-5-miestna-skladom-akcia-/',
+      'https://www.virivkyonline.sk/virivka-model-springs-210x210x92cm-kupelny-zazitok-a-stylovy-dizajn-pre-kazdy-domov/',
+      'https://www.virivkyonline.sk/virivka-new-maximus---luxusny-relax-moderny-dizajn/',
+      'https://www.virivkyonline.sk/virivka-new-maximus--life/',
+      'https://www.virivkyonline.sk/virivka-new-maximus-deluxe--luxusny-relax-moderny-dizajn/'
+    ];
 
     let currentModel = null;
     let toastTimeout = null;
-
-    const FORCE_INCLUDE_NAMES = [
-      'aurora',
-      'split',
-      'spring',
-      'life',
-      'new maximus',
-      'new maximus life',
-      'new maximus deluxe',
-      'maximus',
-      'maximus life',
-      'maximus deluxe'
-    ];
-
-    const EXCLUDE_WORDS = [
-      'filter',
-      'filtre',
-      'filter cartridge',
-      'uv lampa',
-      'uv lamp',
-      'uv steriliz',
-      'chlor',
-      'tablet',
-      'chemia',
-      'chémia',
-      'dezinfek',
-      'aroma',
-      'vôňa',
-      'vona',
-      'kryt',
-      'schodik',
-      'schody',
-      'opierka',
-      'doplnok',
-      'príslušenstvo',
-      'prislusenstvo',
-      'čerpadlo',
-      'cerpadlo',
-      'bazénová chémia',
-      'bazenova chemia'
-    ];
+    let models = [];
 
     function showToast(message = 'Pridané do košíka') {
       const toast = document.getElementById('toast');
       toast.textContent = message;
       toast.classList.add('show');
-
       if (toastTimeout) clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3000);
-    }
-
-    function textFromNode(node, selectors) {
-      for (const selector of selectors) {
-        const found = node.querySelector(selector);
-        if (found && found.textContent) return found.textContent.trim();
-      }
-      return '';
+      toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
     function escapeHtml(text) {
@@ -520,294 +478,135 @@
       return String(priceText).replace(/\s+/g, ' ').trim();
     }
 
-    function parsePriceNumber(priceText) {
-      if (!priceText) return 0;
-      const cleaned = String(priceText).replace(',', '.').replace(/[^0-9.]/g, '');
-      const num = parseFloat(cleaned);
-      return isNaN(num) ? 0 : num;
+    function fetchViaProxy(url) {
+      return fetch(PROXY_BASE + encodeURIComponent(url), { cache: 'no-store' }).then(r => {
+        if (!r.ok) throw new Error('Nepodarilo sa načítať stránku produktu.');
+        return r.text();
+      });
     }
 
-    function normalizeBaseTitle(title) {
-      return (title || '')
-        .replace(/\s+/g, ' ')
-        .replace(/\s*[–-]\s*luxusný.*$/i, '')
-        .replace(/\s*[–-]\s*luxusna.*$/i, '')
-        .replace(/\s*[–-]\s*luxusná.*$/i, '')
-        .replace(/\s*[–-]\s*luxus.*$/i, '')
-        .replace(/\s*[–-]\s*špičkový.*$/i, '')
-        .replace(/\s*[–-]\s*spickovy.*$/i, '')
-        .replace(/\s*[–-]\s*domáci.*$/i, '')
-        .replace(/\s*[–-]\s*domaci.*$/i, '')
-        .replace(/\s*[–-]\s*ponuka.*$/i, '')
-        .replace(/farba\s+oblozenia.*$/i, '')
-        .replace(/farba\s+obloženia.*$/i, '')
-        .replace(/farba\s+akrylu.*$/i, '')
-        .trim();
+    function extractTitle(doc) {
+      return (
+        doc.querySelector('h1')?.textContent?.trim() ||
+        doc.title?.trim() ||
+        'Bez názvu'
+      );
     }
 
-    function parseParams(node) {
-      const params = [];
-      const paramNodes = node.querySelectorAll('PARAM');
+    function extractPrice(doc) {
+      const text = doc.body?.textContent || '';
+      const m = text.match(/€\s*([0-9][0-9\s.,]*)/);
+      return m ? `€${m[1].trim()}` : '';
+    }
 
-      paramNodes.forEach(paramNode => {
-        const name = textFromNode(paramNode, ['PARAM_NAME', 'NAME', 'param_name']);
-        const value = textFromNode(paramNode, ['VAL', 'VALUE', 'val']);
-        if (name && value) params.push({ name, value });
+    function extractDescription(doc) {
+      const text = doc.body?.textContent || '';
+      const idx = text.indexOf('Kategória:');
+      const beforeCat = idx > 0 ? text.slice(0, idx) : text;
+      const lines = beforeCat
+        .split('\n')
+        .map(x => x.trim())
+        .filter(Boolean)
+        .filter(x => x.length > 30)
+        .filter(x => !x.includes('Zvoľte variant'))
+        .filter(x => !x.includes('Do košíka'))
+        .filter(x => !x.includes('Kód:'))
+        .filter(x => !x.includes('Tweet'))
+        .filter(x => !x.includes('Zdieľať'));
+
+      return lines.slice(1, 4).join(' ');
+    }
+
+    function extractGalleryImages(doc) {
+      const urls = [];
+      const imgs = [...doc.querySelectorAll('img')];
+
+      imgs.forEach(img => {
+        const src = img.getAttribute('src') || '';
+        if (!src) return;
+        if (!src.includes('cdn.myshoptet.com')) return;
+        if (src.includes('/thumb/')) return;
+        urls.push(src.startsWith('http') ? src : new URL(src, location.origin).href);
       });
 
-      return params;
+      return [...new Set(urls)];
     }
 
-    function getParamValue(params, names) {
-      for (const p of (params || [])) {
-        const pname = (p.name || '').toLowerCase();
-        if (names.some(n => pname.includes(n))) return (p.value || '').trim();
-      }
-      return '';
-    }
-
-    function mergedProductText(product) {
-      return [
-        product.title || '',
-        product.description || '',
-        product.category || '',
-        ...((product.params || []).map(p => `${p.name} ${p.value}`))
-      ].join(' ').toLowerCase().replace(/\s+/g, ' ');
-    }
-
-    function hasFourFiveKeywords(text) {
-      return (
-        text.includes('4-5') ||
-        text.includes('4 5') ||
-        text.includes('4-miest') ||
-        text.includes('5-miest') ||
-        text.includes('4 miest') ||
-        text.includes('5 miest') ||
-        text.includes('4 osoby') ||
-        text.includes('5 osoby') ||
-        text.includes('pre 4 osoby') ||
-        text.includes('pre 5 osoby') ||
-        text.includes('pre 5 osôb') ||
-        text.includes('pre 4 osôb') ||
-        text.includes('5 osôb') ||
-        text.includes('5 osob') ||
-        text.includes('4 osôb') ||
-        text.includes('4 osob') ||
-        text.includes('5-miestna') ||
-        text.includes('4-miestna')
-      );
-    }
-
-    function hasSixPlusKeywords(text) {
-      return (
-        text.includes('6 osôb') ||
-        text.includes('6 osob') ||
-        text.includes('6 osoby') ||
-        text.includes('6 miest') ||
-        text.includes('6-miest') ||
-        text.includes('7 osôb') ||
-        text.includes('7 osob') ||
-        text.includes('8 osôb') ||
-        text.includes('8 osob') ||
-        text.includes('a viac') ||
-        text.includes('6+') ||
-        text.includes('7+') ||
-        text.includes('8+')
-      );
-    }
-
-    function hasTwoThreeKeywords(text) {
-      return (
-        text.includes('2 osoby') ||
-        text.includes('2 osôb') ||
-        text.includes('2 osob') ||
-        text.includes('3 osoby') ||
-        text.includes('3 osôb') ||
-        text.includes('3 osob') ||
-        text.includes('2-3') ||
-        text.includes('2 3') ||
-        text.includes('2-miest') ||
-        text.includes('3-miest') ||
-        text.includes('2 miest') ||
-        text.includes('3 miest') ||
-        text.includes('dvojmiest') ||
-        text.includes('kompaktná') ||
-        text.includes('kompaktna')
-      );
-    }
-
-    function isForcedIncludeByName(text) {
-      return FORCE_INCLUDE_NAMES.some(name => text.includes(name));
-    }
-
-    function shouldExcludeProduct(product) {
-      const text = mergedProductText(product);
-      return EXCLUDE_WORDS.some(word => text.includes(word));
-    }
-
-    function looksLikeRealSpa(product) {
-      const text = mergedProductText(product);
-      return (
-        text.includes('vírivka') ||
-        text.includes('virivka') ||
-        text.includes('wellness') ||
-        text.includes('hydromasáž') ||
-        text.includes('hydromasaz') ||
-        text.includes('masáž') ||
-        text.includes('masaz') ||
-        isForcedIncludeByName(text)
-      );
-    }
-
-    function isFourFiveCategory(product) {
-      const text = mergedProductText(product);
-
-      if (shouldExcludeProduct(product)) return false;
-      if (!looksLikeRealSpa(product)) return false;
-      if (hasSixPlusKeywords(text)) return false;
-      if (hasTwoThreeKeywords(text)) return false;
-      if (hasFourFiveKeywords(text)) return true;
-      if (isForcedIncludeByName(text)) return true;
-
-      return false;
-    }
-
-    function scoreImageUrl(url, modelTitle = '') {
-      if (!url) return -999;
-      const u = url.toLowerCase();
-      const title = (modelTitle || '').toLowerCase();
-
+    function scoreImage(url, title) {
       let score = 0;
+      const u = (url || '').toLowerCase();
+      const words = (title || '').toLowerCase().split(/\s+/).filter(w => w.length > 2);
 
+      if (u.includes('cdn.myshoptet.com')) score += 20;
       if (u.includes('.jpg') || u.includes('.jpeg') || u.includes('.png') || u.includes('.webp')) score += 10;
-      if (u.includes('img') || u.includes('image') || u.includes('product')) score += 8;
-      if (u.includes('gallery')) score -= 2;
-      if (u.includes('thumb')) score -= 3;
-      if (u.includes('small')) score -= 3;
-      if (u.includes('icon')) score -= 8;
-      if (u.includes('filter')) score -= 30;
-      if (u.includes('uv')) score -= 30;
+      if (u.includes('thumb')) score -= 20;
+      if (u.includes('icon')) score -= 20;
 
-      const titleWords = title.split(/\s+/).filter(w => w.length > 2);
-      for (const w of titleWords) {
+      words.forEach(w => {
         if (u.includes(w)) score += 3;
-      }
+      });
 
       return score;
     }
 
-    function pickBestImage(group, product) {
-      const candidates = [];
-
-      if (group.image) candidates.push(group.image);
-      if (product.image) candidates.push(product.image);
-
-      for (const v of group.variants || []) {
-        if (v.image) candidates.push(v.image);
-      }
-
-      const unique = [...new Set(candidates.filter(Boolean))];
-      if (!unique.length) return '';
-
-      unique.sort((a, b) => scoreImageUrl(b, group.title || product.title) - scoreImageUrl(a, group.title || product.title));
-      return unique[0];
+    function pickBestImage(images, title) {
+      if (!images.length) return '';
+      return [...images].sort((a, b) => scoreImage(b, title) - scoreImage(a, title))[0];
     }
 
-    function parseXmlToProducts(xmlText) {
+    function extractVariantLine(text, label) {
+      const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(escaped + '\\s+Zvoľte variant\\s+([\\s\\S]*?)(?:\\n\\s*[A-ZÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ0-9][^\\n]*?Zvoľte variant|\\n\\s*Kód:|\\n\\s*€|$)', 'i');
+      const m = text.match(re);
+      if (!m) return [];
+      return m[1]
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(' ')
+        .map(x => x.trim())
+        .filter(Boolean)
+        .filter(x => !/^reset$/i.test(x))
+        .filter(x => !/^vybraných$/i.test(x))
+        .filter(x => !/^parametrov\.?$/i.test(x));
+    }
+
+    function extractVariants(doc) {
+      const text = (doc.body?.textContent || '').replace(/\u00a0/g, ' ');
+      const oblozenie = extractVariantLine(text, 'FARBA OBLOŽENIA A SCHODÍKOV');
+      const akryl = extractVariantLine(text, 'FARBA AKRYLU NA VÝBER');
+
+      return {
+        oblozenie: [...new Set(oblozenie)],
+        akryl: [...new Set(akryl)]
+      };
+    }
+
+    function buildModelFromHtml(html, url) {
       const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-      const parseError = xmlDoc.querySelector('parsererror');
-      if (parseError) throw new Error('XML sa nepodarilo spracovať.');
+      const doc = parser.parseFromString(html, 'text/html');
 
-      const itemNodes = xmlDoc.querySelectorAll('SHOPITEM, item, PRODUCT, product, entry');
-      const products = [];
+      const title = extractTitle(doc);
+      const price = extractPrice(doc);
+      const description = extractDescription(doc);
+      const images = extractGalleryImages(doc);
+      const bestImage = pickBestImage(images, title);
+      const variants = extractVariants(doc);
 
-      itemNodes.forEach((node, index) => {
-        const title = textFromNode(node, ['PRODUCT', 'PRODUCTNAME', 'NAME', 'title', 'name']);
-        const description = textFromNode(node, ['DESCRIPTION', 'SHORT_DESCRIPTION', 'ANNOTATION', 'description', 'summary']);
-        const image = textFromNode(node, ['IMGURL', 'IMGURL_ALTERNATIVE', 'IMAGE', 'PRODUCT_IMAGE', 'image']);
-        const category = textFromNode(node, ['CATEGORYTEXT', 'CATEGORY', 'CATEGORY_NAME', 'product_type']);
-        const price = textFromNode(node, ['PRICE_VAT', 'PRICE', 'price']);
-        const link = textFromNode(node, ['URL', 'URL_PRODUCT', 'PRODUCT_URL', 'link']);
-        const params = parseParams(node);
-
-        if (title || link) {
-          products.push({
-            id: link || `${title}-${index}`,
-            title,
-            description,
-            image,
-            category,
-            price,
-            link,
-            params
-          });
-        }
-      });
-
-      return products;
+      return {
+        id: url,
+        url,
+        title,
+        price,
+        description,
+        image: bestImage,
+        images,
+        variants
+      };
     }
 
-    function buildModelMap(products) {
-      const modelMap = {};
-
-      products.filter(isFourFiveCategory).forEach(product => {
-        const baseTitle = normalizeBaseTitle(product.title) || product.title || product.id;
-        const key = baseTitle.toLowerCase();
-
-        if (!modelMap[key]) {
-          modelMap[key] = {
-            modelKey: key,
-            title: baseTitle,
-            image: product.image || '',
-            description: product.description || '',
-            priceText: product.price || '',
-            minPrice: parsePriceNumber(product.price),
-            variants: [],
-            allAkryl: new Set(),
-            allOblozenie: new Set()
-          };
-        }
-
-        const group = modelMap[key];
-
-        if ((!group.description || group.description.length < product.description.length) && product.description) {
-          group.description = product.description;
-        }
-
-        const priceNum = parsePriceNumber(product.price);
-        if (!group.priceText || (priceNum > 0 && (group.minPrice === 0 || priceNum < group.minPrice))) {
-          group.minPrice = priceNum;
-          group.priceText = product.price || '';
-        }
-
-        const akryl = getParamValue(product.params, ['akryl']) || '';
-        const oblozenie = getParamValue(product.params, ['obložen', 'oblozen', 'panel', 'farba oblo']) || '';
-
-        if (akryl) group.allAkryl.add(akryl);
-        if (oblozenie) group.allOblozenie.add(oblozenie);
-
-        group.variants.push({
-          id: product.id,
-          title: product.title,
-          description: product.description,
-          image: product.image,
-          price: product.price,
-          priceNum,
-          akryl,
-          oblozenie
-        });
-
-        group.image = pickBestImage(group, product);
-      });
-
-      return Object.values(modelMap).sort((a, b) => a.title.localeCompare(b.title, 'sk'));
-    }
-
-    function renderModels(models) {
+    function renderModels() {
       const grid = document.getElementById('models-grid');
       const empty = document.getElementById('models-empty');
-
       grid.innerHTML = '';
       closeDetail();
 
@@ -830,7 +629,7 @@
           ${imageHtml}
           <div class="product-body">
             <div class="product-title">${escapeHtml(model.title)}</div>
-            <div class="product-price">${escapeHtml(priceToDisplay(model.priceText))}</div>
+            <div class="product-price">${escapeHtml(priceToDisplay(model.price))}</div>
             <div class="product-desc">${escapeHtml(model.description || 'Bez popisu produktu.')}</div>
             <div class="product-actions">
               <button class="product-button" type="button">Otvoriť detail</button>
@@ -841,28 +640,6 @@
         card.querySelector('button').addEventListener('click', () => openDetail(model));
         grid.appendChild(card);
       });
-    }
-
-    function getCheapestVariant(model) {
-      const priced = (model.variants || []).filter(v => (v.priceNum || 0) > 0);
-      if (priced.length) return priced.sort((a, b) => a.priceNum - b.priceNum)[0];
-      return (model.variants || [])[0] || null;
-    }
-
-    function findVariantForSelection(model, oblozenie, akryl) {
-      let variants = [...(model.variants || [])];
-
-      if (oblozenie) {
-        const filtered = variants.filter(v => (v.oblozenie || '') === oblozenie);
-        if (filtered.length) variants = filtered;
-      }
-
-      if (akryl) {
-        const filtered = variants.filter(v => (v.akryl || '') === akryl);
-        if (filtered.length) variants = filtered;
-      }
-
-      return variants[0] || getCheapestVariant(model);
     }
 
     function openDetail(model) {
@@ -880,7 +657,7 @@
       const oblozenieSelect = document.getElementById('detail-oblozenie');
 
       titleEl.textContent = model.title || 'Bez názvu';
-      priceEl.textContent = priceToDisplay(model.priceText);
+      priceEl.textContent = priceToDisplay(model.price);
       descEl.textContent = model.description || 'Bez popisu produktu.';
       document.getElementById('detail-qty').value = 1;
 
@@ -890,26 +667,26 @@
         imageWrap.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#cfd6e2;">Bez obrázka</div>`;
       }
 
-      const oblozenieValues = [...model.allOblozenie];
-      const akrylValues = [...model.allAkryl];
-
-      if (oblozenieValues.length) {
+      if (model.variants.oblozenie.length) {
         oblozenieWrap.style.display = 'block';
-        oblozenieSelect.innerHTML = oblozenieValues.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+        oblozenieSelect.innerHTML = model.variants.oblozenie
+          .map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`)
+          .join('');
       } else {
         oblozenieWrap.style.display = 'none';
         oblozenieSelect.innerHTML = '';
       }
 
-      if (akrylValues.length) {
+      if (model.variants.akryl.length) {
         akrylWrap.style.display = 'block';
-        akrylSelect.innerHTML = akrylValues.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+        akrylSelect.innerHTML = model.variants.akryl
+          .map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`)
+          .join('');
       } else {
         akrylWrap.style.display = 'none';
         akrylSelect.innerHTML = '';
       }
 
-      updateDetailPriceFromSelection();
       panel.classList.add('show');
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -917,22 +694,6 @@
     function closeDetail() {
       currentModel = null;
       document.getElementById('detail-panel').classList.remove('show');
-    }
-
-    function updateDetailPriceFromSelection() {
-      if (!currentModel) return;
-
-      const oblozenie = document.getElementById('detail-oblozenie').value || '';
-      const akryl = document.getElementById('detail-akryl').value || '';
-      const variant = findVariantForSelection(currentModel, oblozenie, akryl);
-
-      if (variant) {
-        document.getElementById('detail-price').textContent = priceToDisplay(variant.price || currentModel.priceText);
-        if (variant.image) {
-          document.getElementById('detail-image-wrap').innerHTML =
-            `<img src="${escapeHtml(variant.image)}" alt="${escapeHtml(currentModel.title)}">`;
-        }
-      }
     }
 
     function getCart() {
@@ -950,17 +711,16 @@
     function addCurrentDetailToCart() {
       if (!currentModel) return;
 
+      const qty = Math.max(1, parseInt(document.getElementById('detail-qty').value || '1', 10));
       const oblozenie = document.getElementById('detail-oblozenie').value || '';
       const akryl = document.getElementById('detail-akryl').value || '';
-      const qty = Math.max(1, parseInt(document.getElementById('detail-qty').value || '1', 10));
-      const variant = findVariantForSelection(currentModel, oblozenie, akryl);
 
       const cart = getCart();
       cart.push({
-        id: variant?.id || currentModel.modelKey,
+        id: currentModel.id,
         title: currentModel.title,
-        price: variant?.price || currentModel.priceText || '',
-        image: variant?.image || currentModel.image || '',
+        price: currentModel.price,
+        image: currentModel.image || '',
         qty,
         oblozenie,
         akryl
@@ -986,14 +746,13 @@
 
       const oblozenie = document.getElementById('detail-oblozenie').value || '';
       const akryl = document.getElementById('detail-akryl').value || '';
-      const variant = findVariantForSelection(currentModel, oblozenie, akryl);
 
       const favorites = getFavorites();
       const item = {
-        id: variant?.id || currentModel.modelKey,
+        id: currentModel.id,
         title: currentModel.title,
-        price: variant?.price || currentModel.priceText || '',
-        image: variant?.image || currentModel.image || '',
+        price: currentModel.price,
+        image: currentModel.image || '',
         oblozenie,
         akryl
       };
@@ -1014,36 +773,27 @@
       showToast('Uložené do obľúbených');
     }
 
-    document.getElementById('detail-oblozenie').addEventListener('change', updateDetailPriceFromSelection);
-    document.getElementById('detail-akryl').addEventListener('change', updateDetailPriceFromSelection);
-
-    async function fetchFeedText() {
-      try {
-        const direct = await fetch(FEED_URL, { cache: 'no-store' });
-        if (direct.ok) return await direct.text();
-      } catch (e) {}
-
-      const proxied = await fetch(FEED_PROXY_URL, { cache: 'no-store' });
-      if (!proxied.ok) throw new Error('Feed sa nepodarilo načítať ani cez proxy.');
-      return await proxied.text();
-    }
-
-    async function loadFeed() {
+    async function loadProducts() {
       const status = document.getElementById('feed-status');
-      status.textContent = 'Načítavam XML feed...';
+      status.textContent = 'Načítavam produkty...';
 
       try {
-        const xmlText = await fetchFeedText();
-        const products = parseXmlToProducts(xmlText);
-        const models = buildModelMap(products);
-        renderModels(models);
-        status.textContent = `Načítané modely: ${models.length}`;
+        const results = [];
+
+        for (const url of PRODUCT_URLS) {
+          const html = await fetchViaProxy(url);
+          results.push(buildModelFromHtml(html, url));
+        }
+
+        models = results;
+        renderModels();
+        status.textContent = `Načítané produkty: ${models.length}`;
       } catch (error) {
-        status.textContent = 'Chyba pri načítaní feedu: ' + (error.message || 'Neznáma chyba');
+        status.textContent = 'Chyba pri načítaní produktov: ' + (error.message || 'Neznáma chyba');
       }
     }
 
-    loadFeed();
+    loadProducts();
   </script>
 </body>
 </html>
