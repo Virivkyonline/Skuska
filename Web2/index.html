@@ -4,26 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Platinum Lech Spa</title>
-
   <style>
     :root {
       --bg-color: #0B1320;
-      --title-panel: #132844;
-      --center-panel: #1E3A5F;
       --title-text: #FFFFFF;
       --center-text: #F3F4F6;
       --accent-text: #D4AF37;
       --button-text: #0B1320;
-      --menu-button-bg: #D4AF37;
-      --menu-sub-button-bg: #24466f;
-      --menu-sub-button-text: #FFFFFF;
+      --sub-button-text: #FFFFFF;
+      --muted-text: #D5D9E2;
+      --card-border: rgba(255,255,255,0.08);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
       width: 100%;
@@ -41,18 +34,14 @@
       /* background-repeat: no-repeat; */
     }
 
-    .page {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+    .page { min-height: 100vh; display: flex; flex-direction: column; }
 
     .title-panel {
       width: 100%;
-      background: var(--title-panel);
+      background: linear-gradient(180deg, #17345a 0%, #112947 100%);
       text-align: center;
       padding: 34px 16px 24px 16px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.28);
     }
 
     .title-panel h1 {
@@ -74,7 +63,7 @@
       flex-direction: column;
       gap: 12px;
       padding: 18px 16px 0 16px;
-      max-width: 760px;
+      max-width: 980px;
       width: 100%;
       margin: 0 auto;
     }
@@ -82,48 +71,74 @@
     .nav-buttons button,
     .form-buttons button,
     .cart-buttons button,
-    .menu-main-button,
-    .subcategory-buttons button {
+    .subcategory-buttons button,
+    .product-card .product-actions a,
+    .load-feed-button {
       width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 14px;
+      padding: 16px 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
       font-size: 16px;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+      transition: all 0.22s ease;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .nav-buttons button,
     .form-buttons button,
     .cart-buttons button,
-    .menu-main-button {
-      background: var(--menu-button-bg);
+    .load-feed-button,
+    .product-card .product-actions a {
+      background: linear-gradient(180deg, #e2bf4d 0%, #cfa72d 100%);
       color: var(--button-text);
     }
 
     .subcategory-buttons button {
-      background: var(--menu-sub-button-bg);
-      color: var(--menu-sub-button-text);
+      background: linear-gradient(180deg, #2b4f7d 0%, #203d61 100%);
+      color: var(--sub-button-text);
       text-align: left;
+      justify-content: flex-start;
+      padding-left: 18px;
+    }
+
+    .subcategory-buttons button.active {
+      background: linear-gradient(180deg, #e2bf4d 0%, #cfa72d 100%);
+      color: var(--button-text);
+    }
+
+    .nav-buttons button:hover,
+    .form-buttons button:hover,
+    .cart-buttons button:hover,
+    .subcategory-buttons button:hover,
+    .product-card .product-actions a:hover,
+    .load-feed-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(0,0,0,0.28);
+      filter: brightness(1.03);
     }
 
     .content {
       flex: 1;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
       padding: 24px 14px;
     }
 
     .center-panel {
       width: 100%;
-      max-width: 760px;
-      background: var(--center-panel);
-      border-radius: 24px;
-      padding: 26px 18px;
+      max-width: 980px;
+      background: linear-gradient(180deg, #274a77 0%, #1f3d63 100%);
+      border-radius: 28px;
+      padding: 28px 20px;
       text-align: center;
-      box-shadow: 0 10px 26px rgba(0,0,0,0.35);
+      box-shadow: 0 18px 36px rgba(0,0,0,0.30);
+      border: 1px solid rgba(255,255,255,0.05);
     }
 
     .center-panel h2 {
@@ -139,35 +154,30 @@
       margin-bottom: 16px;
     }
 
-    .gold {
-      color: var(--accent-text);
-      font-weight: 700;
-    }
+    .gold { color: var(--accent-text); font-weight: 700; }
 
     input, textarea {
       width: 100%;
       margin-bottom: 14px;
       padding: 14px;
       border: none;
-      border-radius: 12px;
+      border-radius: 14px;
       font-size: 16px;
       outline: none;
+      background: #f4f4f4;
+      color: #111827;
     }
 
-    textarea {
-      min-height: 140px;
-      resize: vertical;
-    }
+    textarea { min-height: 160px; resize: vertical; }
 
-    .form-buttons,
-    .cart-buttons {
+    .form-buttons, .cart-buttons {
       margin-top: 10px;
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
 
-    #form-status {
+    #form-status, #feed-status {
       margin-top: 14px;
       font-size: 15px;
       color: #FFFFFF;
@@ -188,76 +198,153 @@
       display: block;
     }
 
-    #home-page,
-    #contact-page,
-    #cart-page {
-      width: 100%;
-    }
+    #home-page, #contact-page, #cart-page { width: 100%; }
+    #contact-page, #cart-page { display: none; }
 
-    #contact-page,
-    #cart-page {
-      display: none;
-    }
-
-    .menu-box {
-      margin-top: 22px;
-      text-align: left;
-    }
-
-    .menu-main-button {
-      margin-bottom: 14px;
-    }
+    .menu-box { margin-top: 22px; text-align: left; }
 
     .subcategory-buttons {
       display: none;
       flex-direction: column;
       gap: 10px;
+      margin-bottom: 20px;
     }
 
-    .subcategory-buttons.show {
+    .subcategory-buttons.show { display: flex; }
+
+    .feed-tools {
       display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .products-section {
+      margin-top: 8px;
+      text-align: left;
+    }
+
+    .products-header {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .products-header h3 {
+      font-size: 22px;
+      color: var(--title-text);
+      margin: 0;
+    }
+
+    .products-header p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--muted-text);
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .product-card {
+      background: rgba(10, 20, 36, 0.45);
+      border: 1px solid var(--card-border);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 14px 28px rgba(0,0,0,0.22);
+    }
+
+    .product-image-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: rgba(255,255,255,0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .product-image-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .product-body { padding: 16px; }
+
+    .product-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+
+    .product-category {
+      font-size: 13px;
+      color: var(--accent-text);
+      margin-bottom: 8px;
+    }
+
+    .product-price {
+      font-size: 22px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+    }
+
+    .product-desc {
+      font-size: 14px;
+      color: var(--muted-text);
+      line-height: 1.5;
+      margin-bottom: 14px;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .product-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .empty-state {
+      background: rgba(10, 20, 36, 0.35);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 20px;
+      color: var(--muted-text);
+      font-size: 15px;
     }
 
     @media (min-width: 700px) {
-      .title-panel {
-        padding: 42px 20px 30px 20px;
-      }
+      .title-panel { padding: 42px 20px 30px 20px; }
+      .title-panel h1 { font-size: 48px; }
+      .title-panel p { font-size: 20px; }
 
-      .title-panel h1 {
-        font-size: 48px;
-      }
+      .nav-buttons { flex-direction: row; flex-wrap: wrap; }
+      .nav-buttons button { flex: 1; }
 
-      .title-panel p {
-        font-size: 20px;
-      }
+      .center-panel { padding: 36px 30px; }
+      .center-panel h2 { font-size: 32px; }
+      .center-panel p { font-size: 20px; }
 
-      .nav-buttons {
-        flex-direction: row;
-      }
+      .feed-tools { flex-direction: row; align-items: center; }
+      .feed-tools .load-feed-button { width: auto; }
 
-      .nav-buttons button {
-        flex: 1;
-      }
+      .products-grid { grid-template-columns: repeat(2, 1fr); }
+      .logo-bottom { min-height: 170px; }
+      .logo-bottom img { max-width: 320px; }
+    }
 
-      .center-panel {
-        padding: 36px 30px;
-      }
-
-      .center-panel h2 {
-        font-size: 32px;
-      }
-
-      .center-panel p {
-        font-size: 20px;
-      }
-
-      .logo-bottom {
-        min-height: 170px;
-      }
-
-      .logo-bottom img {
-        max-width: 320px;
-      }
+    @media (min-width: 980px) {
+      .products-grid { grid-template-columns: repeat(3, 1fr); }
     }
   </style>
 </head>
@@ -270,9 +357,10 @@
     </div>
 
     <div class="nav-buttons">
-      <button onclick="showPage('home-page')">Hlavná stránka</button>
-      <button onclick="showPage('cart-page')">Košík</button>
-      <button onclick="showPage('contact-page')">Kontaktný formulár</button>
+      <button type="button" onclick="showPage('home-page')">Hlavná stránka</button>
+      <button type="button" onclick="toggleSubcategories()">Menu</button>
+      <button type="button" onclick="showPage('cart-page')">Košík</button>
+      <button type="button" onclick="showPage('contact-page')">Kontaktný formulár</button>
     </div>
 
     <div class="content">
@@ -305,20 +393,20 @@
           </p>
 
           <div class="menu-box">
-            <button class="menu-main-button" onclick="toggleSubcategories()">
-              MENU
-            </button>
+            <div class="feed-tools">
+              <button class="load-feed-button" type="button" onclick="loadFeed()">Načítať kategórie a produkty</button>
+              <p id="feed-status">Feed zatiaľ nie je načítaný.</p>
+            </div>
 
-            <div id="subcategoryButtons" class="subcategory-buttons">
-              <button type="button">Akrylátová vírivka (Balboa vírivka)</button>
-              <button type="button">Dvojmiestna vírivka (vírivky pre dve osoby)</button>
-              <button type="button">Vírivka pre 4-5 osôb</button>
-              <button type="button">Vírivky pre 6 osôb</button>
-              <button type="button">Ochládzovacia kaďa do exteriéru či interiéru</button>
-              <button type="button">Doplnky a voliteľná výbava</button>
-              <button type="button">Swim spa bazén (protiprúd bazén)</button>
-              <button type="button">Bezchlórová chémia, filtre</button>
-              <button type="button">Kontajnerové stavby – chaty, garáže, unimobunky</button>
+            <div id="subcategoryButtons" class="subcategory-buttons"></div>
+
+            <div class="products-section">
+              <div class="products-header">
+                <h3 id="products-title">Produkty</h3>
+                <p id="products-subtitle">Po načítaní feedu si vyber kategóriu.</p>
+              </div>
+              <div id="products-grid" class="products-grid"></div>
+              <div id="products-empty" class="empty-state">Zatiaľ nie sú načítané žiadne produkty.</div>
             </div>
           </div>
 
@@ -348,14 +436,8 @@
         <div class="center-panel">
           <h2>Nákupný košík</h2>
 
-          <p>
-            Táto sekcia je zatiaľ pripravená ako jednoduchý košík.
-          </p>
-
-          <p>
-            Neskôr sem môžeme doplniť produkty, ceny, počet kusov,
-            výpočet sumy a objednávkový formulár.
-          </p>
+          <p>Táto sekcia je zatiaľ pripravená ako jednoduchý košík.</p>
+          <p>Neskôr sem môžeme doplniť produkty, ceny, počet kusov, výpočet sumy a objednávkový formulár.</p>
 
           <div class="cart-buttons">
             <button type="button" onclick="showPage('home-page')">Hlavná stránka</button>
@@ -372,6 +454,12 @@
   </div>
 
   <script>
+    const FEED_URL = 'https://www.virivkyonline.sk/universal.xml';
+    const FEED_PROXY_URL = 'https://virivkyapp.lechstav.workers.dev/feed?url=' + encodeURIComponent(FEED_URL);
+
+    let allProducts = [];
+    let categoryMap = {};
+
     function showPage(pageId) {
       document.getElementById('home-page').style.display = 'none';
       document.getElementById('contact-page').style.display = 'none';
@@ -380,8 +468,235 @@
     }
 
     function toggleSubcategories() {
-      const box = document.getElementById('subcategoryButtons');
-      box.classList.toggle('show');
+      showPage('home-page');
+      document.getElementById('subcategoryButtons').classList.toggle('show');
+    }
+
+    function textFromNode(node, selectors) {
+      for (const selector of selectors) {
+        const found = node.querySelector(selector);
+        if (found && found.textContent) {
+          return found.textContent.trim();
+        }
+      }
+      return '';
+    }
+
+    function escapeHtml(text) {
+      return (text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function priceToDisplay(priceText) {
+      if (!priceText) return 'Cena na vyžiadanie';
+      return priceText.replace(/\s+/g, ' ').trim();
+    }
+
+    function normalizeCategoryName(name) {
+      return (name || '')
+        .replace(/\s+/g, ' ')
+        .replace(/\|/g, ' / ')
+        .trim();
+    }
+
+    function parseXmlToProducts(xmlText) {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      const parseError = xmlDoc.querySelector('parsererror');
+      if (parseError) {
+        throw new Error('XML sa nepodarilo spracovať.');
+      }
+
+      const itemNodes = xmlDoc.querySelectorAll('SHOPITEM, item, PRODUCT, product, entry');
+      const products = [];
+
+      itemNodes.forEach(node => {
+        const title = textFromNode(node, [
+          'PRODUCT',
+          'PRODUCTNAME',
+          'NAME',
+          'title',
+          'name'
+        ]);
+
+        const description = textFromNode(node, [
+          'DESCRIPTION',
+          'SHORT_DESCRIPTION',
+          'ANNOTATION',
+          'description',
+          'summary'
+        ]);
+
+        const link = textFromNode(node, [
+          'URL',
+          'URL_PRODUCT',
+          'PRODUCT_URL',
+          'link'
+        ]);
+
+        const image = textFromNode(node, [
+          'IMGURL',
+          'IMGURL_ALTERNATIVE',
+          'IMAGE',
+          'PRODUCT_IMAGE',
+          'image'
+        ]);
+
+        const category = normalizeCategoryName(textFromNode(node, [
+          'CATEGORYTEXT',
+          'CATEGORY',
+          'CATEGORY_NAME',
+          'product_type'
+        ]));
+
+        const price = textFromNode(node, [
+          'PRICE_VAT',
+          'PRICE',
+          'price'
+        ]);
+
+        if (title || link) {
+          products.push({
+            title,
+            description,
+            link,
+            image,
+            category,
+            price
+          });
+        }
+      });
+
+      return products;
+    }
+
+    function buildCategoryMap(products) {
+      const map = {};
+
+      products.forEach(product => {
+        const cat = product.category || 'Ostatné produkty';
+        if (!map[cat]) {
+          map[cat] = [];
+        }
+        map[cat].push(product);
+      });
+
+      return map;
+    }
+
+    function buildCategoryButtons() {
+      const wrap = document.getElementById('subcategoryButtons');
+      wrap.innerHTML = '';
+
+      const categories = Object.keys(categoryMap).sort((a, b) => a.localeCompare(b, 'sk'));
+
+      categories.forEach(categoryName => {
+        const count = categoryMap[categoryName].length;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = `${categoryName} (${count})`;
+        btn.onclick = () => renderCategory(categoryName);
+        wrap.appendChild(btn);
+      });
+
+      wrap.classList.add('show');
+    }
+
+    function setActiveCategoryButton(categoryName) {
+      const wrap = document.getElementById('subcategoryButtons');
+      const buttons = Array.from(wrap.querySelectorAll('button'));
+      buttons.forEach(btn => {
+        const clean = btn.textContent.replace(/\s+\(\d+\)$/, '');
+        btn.classList.toggle('active', clean === categoryName);
+      });
+    }
+
+    function renderProducts(products, title, subtitle) {
+      const grid = document.getElementById('products-grid');
+      const empty = document.getElementById('products-empty');
+      document.getElementById('products-title').textContent = title;
+      document.getElementById('products-subtitle').textContent = subtitle;
+      grid.innerHTML = '';
+
+      if (!products.length) {
+        empty.style.display = 'block';
+        empty.textContent = 'V tejto kategórii sa zatiaľ nenašli produkty.';
+        return;
+      }
+
+      empty.style.display = 'none';
+
+      products.forEach(product => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+
+        const imageHtml = product.image
+          ? `<div class="product-image-wrap"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"></div>`
+          : `<div class="product-image-wrap"><span style="color:#cfd6e2;font-size:14px;">Bez obrázka</span></div>`;
+
+        card.innerHTML = `
+          ${imageHtml}
+          <div class="product-body">
+            <div class="product-category">${escapeHtml(product.category || 'Produkt')}</div>
+            <div class="product-title">${escapeHtml(product.title || 'Bez názvu')}</div>
+            <div class="product-price">${escapeHtml(priceToDisplay(product.price))}</div>
+            <div class="product-desc">${escapeHtml(product.description || 'Bez popisu produktu.')}</div>
+            <div class="product-actions">
+              ${product.link ? `<a href="${escapeHtml(product.link)}" target="_blank" rel="noopener noreferrer">Otvoriť produkt</a>` : ''}
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function renderCategory(categoryName) {
+      setActiveCategoryButton(categoryName);
+      const products = categoryMap[categoryName] || [];
+      renderProducts(products, categoryName, `Načítané produkty: ${products.length}`);
+    }
+
+    async function fetchFeedText() {
+      try {
+        const direct = await fetch(FEED_URL, { cache: 'no-store' });
+        if (direct.ok) {
+          return await direct.text();
+        }
+      } catch (e) {}
+
+      const proxied = await fetch(FEED_PROXY_URL, { cache: 'no-store' });
+      if (!proxied.ok) {
+        throw new Error('Feed sa nepodarilo načítať ani cez proxy.');
+      }
+      return await proxied.text();
+    }
+
+    async function loadFeed() {
+      const status = document.getElementById('feed-status');
+      status.textContent = 'Načítavam XML feed...';
+
+      try {
+        const xmlText = await fetchFeedText();
+        allProducts = parseXmlToProducts(xmlText);
+        categoryMap = buildCategoryMap(allProducts);
+        buildCategoryButtons();
+
+        const categories = Object.keys(categoryMap).sort((a, b) => a.localeCompare(b, 'sk'));
+
+        if (categories.length > 0) {
+          renderCategory(categories[0]);
+          status.textContent = `Feed načítaný. Kategórie: ${categories.length}, produkty: ${allProducts.length}`;
+        } else {
+          renderProducts([], 'Produkty', 'Feed je načítaný, ale nenašli sa kategórie.');
+          status.textContent = 'Feed načítaný, ale nenašli sa kategórie.';
+        }
+      } catch (error) {
+        status.textContent = 'Chyba pri načítaní feedu: ' + (error.message || 'Neznáma chyba');
+      }
     }
 
     document.getElementById('contactForm').addEventListener('submit', async function(e) {
@@ -397,9 +712,7 @@
       try {
         const response = await fetch('https://virivkyapp.lechstav.workers.dev', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ meno, email, sprava })
         });
 
