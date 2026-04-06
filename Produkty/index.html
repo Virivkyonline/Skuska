@@ -459,6 +459,34 @@
       'maximus deluxe'
     ];
 
+    const EXCLUDE_WORDS = [
+      'filter',
+      'filtre',
+      'filter cartridge',
+      'uv lampa',
+      'uv lamp',
+      'uv steriliz',
+      'chlor',
+      'tablet',
+      'chemia',
+      'chémia',
+      'dezinfek',
+      'aroma',
+      'vôňa',
+      'vona',
+      'kryt',
+      'schodik',
+      'schody',
+      'opierka',
+      'doplnok',
+      'príslušenstvo',
+      'prislusenstvo',
+      'čerpadlo',
+      'cerpadlo',
+      'bazénová chémia',
+      'bazenova chemia'
+    ];
+
     function showToast(message = 'Pridané do košíka') {
       const toast = document.getElementById('toast');
       toast.textContent = message;
@@ -504,13 +532,13 @@
         .replace(/\s+/g, ' ')
         .replace(/\s*[–-]\s*luxusný.*$/i, '')
         .replace(/\s*[–-]\s*luxusna.*$/i, '')
+        .replace(/\s*[–-]\s*luxusná.*$/i, '')
         .replace(/\s*[–-]\s*luxus.*$/i, '')
         .replace(/\s*[–-]\s*špičkový.*$/i, '')
         .replace(/\s*[–-]\s*spickovy.*$/i, '')
         .replace(/\s*[–-]\s*domáci.*$/i, '')
         .replace(/\s*[–-]\s*domaci.*$/i, '')
         .replace(/\s*[–-]\s*ponuka.*$/i, '')
-        .replace(/\s*[–-]\s*pre.*$/i, '')
         .replace(/farba\s+oblozenia.*$/i, '')
         .replace(/farba\s+obloženia.*$/i, '')
         .replace(/farba\s+akrylu.*$/i, '')
@@ -566,11 +594,7 @@
         text.includes('4 osôb') ||
         text.includes('4 osob') ||
         text.includes('5-miestna') ||
-        text.includes('4-miestna') ||
-        text.includes('luxusná 4-miestna') ||
-        text.includes('luxusná 5-miestna') ||
-        text.includes('luxusna 4-miestna') ||
-        text.includes('luxusna 5-miestna')
+        text.includes('4-miestna')
       );
     }
 
@@ -616,15 +640,77 @@
       return FORCE_INCLUDE_NAMES.some(name => text.includes(name));
     }
 
+    function shouldExcludeProduct(product) {
+      const text = mergedProductText(product);
+      return EXCLUDE_WORDS.some(word => text.includes(word));
+    }
+
+    function looksLikeRealSpa(product) {
+      const text = mergedProductText(product);
+      return (
+        text.includes('vírivka') ||
+        text.includes('virivka') ||
+        text.includes('wellness') ||
+        text.includes('hydromasáž') ||
+        text.includes('hydromasaz') ||
+        text.includes('masáž') ||
+        text.includes('masaz') ||
+        isForcedIncludeByName(text)
+      );
+    }
+
     function isFourFiveCategory(product) {
       const text = mergedProductText(product);
 
+      if (shouldExcludeProduct(product)) return false;
+      if (!looksLikeRealSpa(product)) return false;
       if (hasSixPlusKeywords(text)) return false;
       if (hasTwoThreeKeywords(text)) return false;
       if (hasFourFiveKeywords(text)) return true;
       if (isForcedIncludeByName(text)) return true;
 
       return false;
+    }
+
+    function scoreImageUrl(url, modelTitle = '') {
+      if (!url) return -999;
+      const u = url.toLowerCase();
+      const title = (modelTitle || '').toLowerCase();
+
+      let score = 0;
+
+      if (u.includes('.jpg') || u.includes('.jpeg') || u.includes('.png') || u.includes('.webp')) score += 10;
+      if (u.includes('img') || u.includes('image') || u.includes('product')) score += 8;
+      if (u.includes('gallery')) score -= 2;
+      if (u.includes('thumb')) score -= 3;
+      if (u.includes('small')) score -= 3;
+      if (u.includes('icon')) score -= 8;
+      if (u.includes('filter')) score -= 30;
+      if (u.includes('uv')) score -= 30;
+
+      const titleWords = title.split(/\s+/).filter(w => w.length > 2);
+      for (const w of titleWords) {
+        if (u.includes(w)) score += 3;
+      }
+
+      return score;
+    }
+
+    function pickBestImage(group, product) {
+      const candidates = [];
+
+      if (group.image) candidates.push(group.image);
+      if (product.image) candidates.push(product.image);
+
+      for (const v of group.variants || []) {
+        if (v.image) candidates.push(v.image);
+      }
+
+      const unique = [...new Set(candidates.filter(Boolean))];
+      if (!unique.length) return '';
+
+      unique.sort((a, b) => scoreImageUrl(b, group.title || product.title) - scoreImageUrl(a, group.title || product.title));
+      return unique[0];
     }
 
     function parseXmlToProducts(xmlText) {
@@ -685,7 +771,6 @@
 
         const group = modelMap[key];
 
-        if (!group.image && product.image) group.image = product.image;
         if ((!group.description || group.description.length < product.description.length) && product.description) {
           group.description = product.description;
         }
@@ -712,6 +797,8 @@
           akryl,
           oblozenie
         });
+
+        group.image = pickBestImage(group, product);
       });
 
       return Object.values(modelMap).sort((a, b) => a.title.localeCompare(b.title, 'sk'));
@@ -960,6 +1047,3 @@
   </script>
 </body>
 </html>
-
-
-
