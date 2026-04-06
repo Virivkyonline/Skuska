@@ -30,12 +30,12 @@
     }
 
     body {
-  background-image: url('bublinky.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  background-color: var(--bg-color);
+      background-image: url('bublinky.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-color: var(--bg-color);
     }
 
     .page {
@@ -764,17 +764,6 @@
       return false;
     }
 
-    function normalizeBaseTitle(title) {
-      return (title || '')
-        .replace(/\s+/g, ' ')
-        .replace(/\([^)]*\)/g, '')
-        .replace(/farba\s+oblozenia.*$/i, '')
-        .replace(/farba\s+akrylu.*$/i, '')
-        .replace(/oblozenie.*$/i, '')
-        .replace(/akryl.*$/i, '')
-        .trim();
-    }
-
     function parseParams(node) {
       const params = [];
       const paramNodes = node.querySelectorAll('PARAM');
@@ -810,7 +799,7 @@
       const itemNodes = xmlDoc.querySelectorAll('SHOPITEM, item, PRODUCT, product, entry');
       const products = [];
 
-      itemNodes.forEach(node => {
+      itemNodes.forEach((node, index) => {
         const title = textFromNode(node, ['PRODUCT', 'PRODUCTNAME', 'NAME', 'title', 'name']);
         const description = textFromNode(node, ['DESCRIPTION', 'SHORT_DESCRIPTION', 'ANNOTATION', 'description', 'summary']);
         const image = textFromNode(node, ['IMGURL', 'IMGURL_ALTERNATIVE', 'IMAGE', 'PRODUCT_IMAGE', 'image']);
@@ -821,6 +810,7 @@
 
         if (title || link) {
           products.push({
+            id: link || `${title}-${index}`,
             title,
             description,
             image,
@@ -849,26 +839,6 @@
       });
 
       return map;
-    }
-
-    function groupProducts(products) {
-      const grouped = {};
-
-      products.forEach(product => {
-        const key = normalizeBaseTitle(product.title) || product.title || product.link;
-
-        if (!grouped[key]) {
-          grouped[key] = {
-            baseTitle: key,
-            items: [],
-            category: product.leafCategory || product.category || 'Produkt'
-          };
-        }
-
-        grouped[key].items.push(product);
-      });
-
-      return Object.values(grouped);
     }
 
     function buildCategoryButtons() {
@@ -961,7 +931,7 @@
       const favorites = getFavorites();
 
       const exists = favorites.some(f =>
-        f.title === item.title &&
+        f.id === item.id &&
         (f.oblozenie || '') === (item.oblozenie || '') &&
         (f.akryl || '') === (item.akryl || '')
       );
@@ -995,6 +965,7 @@
       if (!item) return;
 
       addToCart({
+        id: item.id,
         title: item.title,
         price: item.price,
         image: item.image || '',
@@ -1034,7 +1005,7 @@
       });
     }
 
-    function renderGroupedProducts(groups, title, subtitle) {
+    function renderProducts(products, title, subtitle) {
       const grid = document.getElementById('products-grid');
       const empty = document.getElementById('products-empty');
 
@@ -1042,7 +1013,7 @@
       document.getElementById('products-subtitle').textContent = subtitle;
       grid.innerHTML = '';
 
-      if (!groups.length) {
+      if (!products.length) {
         empty.style.display = 'block';
         empty.textContent = 'V tejto kategórii sa zatiaľ nenašli produkty.';
         return;
@@ -1050,16 +1021,15 @@
 
       empty.style.display = 'none';
 
-      groups.forEach((group) => {
-        const first = group.items[0];
-        const allAkryl = [...new Set(group.items.flatMap(i => i.colorsAkryl || []))];
-        const allOblozenie = [...new Set(group.items.flatMap(i => i.colorsOblozenie || []))];
+      products.forEach((product, idx) => {
+        const allAkryl = [...new Set(product.colorsAkryl || [])];
+        const allOblozenie = [...new Set(product.colorsOblozenie || [])];
 
         const card = document.createElement('div');
         card.className = 'product-card';
 
-        const imageHtml = first.image
-          ? `<div class="product-image-wrap"><img src="${escapeHtml(first.image)}" alt="${escapeHtml(first.title)}"></div>`
+        const imageHtml = product.image
+          ? `<div class="product-image-wrap"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"></div>`
           : `<div class="product-image-wrap"><span style="color:#cfd6e2;font-size:14px;">Bez obrázka</span></div>`;
 
         const akrylId = nextUid('akryl');
@@ -1071,10 +1041,10 @@
         card.innerHTML = `
           ${imageHtml}
           <div class="product-body">
-            <div class="product-category">${escapeHtml(first.leafCategory || first.category || 'Produkt')}</div>
-            <div class="product-title">${escapeHtml(group.baseTitle || first.title || 'Bez názvu')}</div>
-            <div class="product-price">${escapeHtml(priceToDisplay(first.price))}</div>
-            <div class="product-desc">${escapeHtml(first.description || 'Bez popisu produktu.')}</div>
+            <div class="product-category">${escapeHtml(product.leafCategory || product.category || 'Produkt')}</div>
+            <div class="product-title">${escapeHtml(product.title || 'Bez názvu')}</div>
+            <div class="product-price">${escapeHtml(priceToDisplay(product.price))}</div>
+            <div class="product-desc">${escapeHtml(product.description || 'Bez popisu produktu.')}</div>
 
             ${allOblozenie.length ? `
               <div class="variant-wrap">
@@ -1107,40 +1077,33 @@
 
         grid.appendChild(card);
 
-        const addBtn = document.getElementById(buttonId);
-        addBtn.addEventListener('click', function() {
+        document.getElementById(buttonId).addEventListener('click', function() {
           const oblozenieEl = document.getElementById(oblozenieId);
           const akrylEl = document.getElementById(akrylId);
           const qtyEl = document.getElementById(qtyId);
 
-          const qty = Math.max(1, parseInt(qtyEl?.value || '1', 10));
-          const oblozenie = oblozenieEl ? oblozenieEl.value : '';
-          const akryl = akrylEl ? akrylEl.value : '';
-
           addToCart({
-            title: group.baseTitle || first.title || 'Bez názvu',
-            price: first.price || '',
-            image: first.image || '',
-            qty,
-            oblozenie,
-            akryl
+            id: product.id || `${product.title}-${idx}`,
+            title: product.title || 'Bez názvu',
+            price: product.price || '',
+            image: product.image || '',
+            qty: Math.max(1, parseInt(qtyEl?.value || '1', 10)),
+            oblozenie: oblozenieEl ? oblozenieEl.value : '',
+            akryl: akrylEl ? akrylEl.value : ''
           });
         });
 
-        const favBtn = document.getElementById(favButtonId);
-        favBtn.addEventListener('click', function() {
+        document.getElementById(favButtonId).addEventListener('click', function() {
           const oblozenieEl = document.getElementById(oblozenieId);
           const akrylEl = document.getElementById(akrylId);
 
-          const oblozenie = oblozenieEl ? oblozenieEl.value : '';
-          const akryl = akrylEl ? akrylEl.value : '';
-
           addToFavorites({
-            title: group.baseTitle || first.title || 'Bez názvu',
-            price: first.price || '',
-            image: first.image || '',
-            oblozenie,
-            akryl
+            id: product.id || `${product.title}-${idx}`,
+            title: product.title || 'Bez názvu',
+            price: product.price || '',
+            image: product.image || '',
+            oblozenie: oblozenieEl ? oblozenieEl.value : '',
+            akryl: akrylEl ? akrylEl.value : ''
           });
         });
       });
@@ -1149,8 +1112,7 @@
     function renderCategory(categoryName) {
       setActiveCategoryButton(categoryName);
       const products = categoryMap[categoryName] || [];
-      const groups = groupProducts(products);
-      renderGroupedProducts(groups, categoryName, `Produktové skupiny: ${groups.length}`);
+      renderProducts(products, categoryName, `Produkty: ${products.length}`);
     }
 
     function renderCart() {
