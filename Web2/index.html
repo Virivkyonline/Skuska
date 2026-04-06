@@ -750,7 +750,7 @@
     function normalizeBaseTitle(title) {
       return (title || '')
         .replace(/\s+/g, ' ')
-        .replace(/[^)]*/g, '')
+        .replace(/\([^)]*\)/g, '')
         .replace(/farba\s+oblozenia.*$/i, '')
         .replace(/farba\s+akrylu.*$/i, '')
         .replace(/oblozenie.*$/i, '')
@@ -882,7 +882,7 @@
       const buttons = Array.from(wrap.querySelectorAll('button'));
 
       buttons.forEach(btn => {
-        const clean = btn.textContent.replace(/\s+\d+$/, '');
+        const clean = btn.textContent.replace(/\s+\(\d+\)$/, '');
         btn.classList.toggle('active', clean === categoryName);
       });
     }
@@ -1209,7 +1209,6 @@
 
     function clearCustomerData() {
       localStorage.removeItem('platinum_customer_data');
-      fillCustomerData();
       document.getElementById('order_name').value = '';
       document.getElementById('order_email').value = '';
       document.getElementById('order_phone').value = '';
@@ -1384,9 +1383,3 @@
   </script>
 </body>
 </html>
-'''
-
-from pathlib import Path
-path = Path('/mnt/data/index_with_customer_memory.html')
-path.write_text(html_content, encoding='utf-8')
-print(str(path))
