@@ -1,1 +1,881 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Produkty - Vírivka pre 4-5 osoby</title>
+  <style>
+    :root {
+      --bg-color: #0B1320;
+      --title-text: #FFFFFF;
+      --center-text: #F3F4F6;
+      --accent-text: #D4AF37;
+      --button-text: #0B1320;
+      --muted-text: #D5D9E2;
+      --card-border: rgba(255,255,255,0.08);
+      --panel-bg: linear-gradient(180deg, #274a77 0%, #1f3d63 100%);
+      --dark-card: rgba(10, 20, 36, 0.45);
+      --success-green: #1f9d55;
+      --danger-red: #b91c1c;
+    }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--title-text);
+    }
+
+    body {
+      background-image: url('bublinky.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-color: var(--bg-color);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title-panel {
+      width: 100%;
+      background: linear-gradient(180deg, #17345a 0%, #112947 100%);
+      text-align: center;
+      padding: 34px 16px 24px 16px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+    }
+
+    .title-panel h1 {
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: var(--title-text);
+      margin-bottom: 10px;
+    }
+
+    .title-panel p {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent-text);
+    }
+
+    .content {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px 14px;
+    }
+
+    .center-panel {
+      width: 100%;
+      max-width: 1100px;
+      background: var(--panel-bg);
+      border-radius: 28px;
+      padding: 28px 20px;
+      box-shadow: 0 18px 36px rgba(0,0,0,0.30);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .center-panel h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: var(--title-text);
+      text-align: center;
+    }
+
+    .center-panel p {
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--center-text);
+      margin-bottom: 14px;
+    }
+
+    #feed-status {
+      margin: 8px 0 18px 0;
+      font-size: 15px;
+      color: #FFFFFF;
+      text-align: left;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .product-card {
+      background: var(--dark-card);
+      border: 1px solid var(--card-border);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 14px 28px rgba(0,0,0,0.22);
+    }
+
+    .product-image-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: rgba(255,255,255,0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .product-image-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .product-body {
+      padding: 16px;
+      text-align: left;
+    }
+
+    .product-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+
+    .product-price {
+      font-size: 22px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+    }
+
+    .product-desc {
+      font-size: 14px;
+      color: var(--muted-text);
+      line-height: 1.5;
+      margin-bottom: 12px;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .product-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .product-button,
+    .variant-select,
+    .qty-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .product-button {
+      cursor: pointer;
+      transition: all 0.22s ease;
+      background: linear-gradient(180deg, #e2bf4d 0%, #cfa72d 100%);
+      color: var(--button-text);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+    }
+
+    .product-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(0,0,0,0.28);
+      filter: brightness(1.03);
+    }
+
+    .variant-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .variant-label {
+      font-size: 13px;
+      color: var(--muted-text);
+      font-weight: 700;
+    }
+
+    .variant-select,
+    .qty-input {
+      background: rgba(255,255,255,0.92);
+      color: #111827;
+      box-shadow: none;
+      font-weight: 600;
+    }
+
+    .qty-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .detail-panel {
+      margin-top: 22px;
+      background: rgba(8, 17, 31, 0.55);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 22px;
+      padding: 16px;
+      display: none;
+      text-align: left;
+    }
+
+    .detail-panel.show {
+      display: block;
+    }
+
+    .detail-top {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .detail-image {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 18px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .detail-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .detail-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .detail-price {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .detail-description {
+      font-size: 15px;
+      color: var(--muted-text);
+      line-height: 1.6;
+      margin-bottom: 12px;
+      white-space: pre-line;
+    }
+
+    .empty-state {
+      background: rgba(10, 20, 36, 0.35);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 20px;
+      color: var(--muted-text);
+      font-size: 15px;
+      text-align: left;
+      margin-top: 18px;
+    }
+
+    .logo-bottom {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      min-height: 120px;
+      padding: 16px 16px 24px 16px;
+    }
+
+    .logo-bottom img {
+      max-width: 240px;
+      width: 60%;
+      height: auto;
+      display: block;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--success-green);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 9999;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (min-width: 700px) {
+      .title-panel {
+        padding: 42px 20px 30px 20px;
+      }
+
+      .title-panel h1 {
+        font-size: 48px;
+      }
+
+      .title-panel p {
+        font-size: 20px;
+      }
+
+      .center-panel {
+        padding: 36px 30px;
+      }
+
+      .center-panel h2 {
+        font-size: 32px;
+      }
+
+      .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .detail-top {
+        grid-template-columns: 380px 1fr;
+      }
+
+      .logo-bottom {
+        min-height: 170px;
+      }
+
+      .logo-bottom img {
+        max-width: 320px;
+      }
+    }
+
+    @media (min-width: 980px) {
+      .products-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="title-panel">
+      <h1>PLATINUM LECH SPA</h1>
+      <p>VÍRIVKA PRE 4-5 OSOBY</p>
+    </div>
+
+    <div class="content">
+      <div class="center-panel">
+        <h2>Produkty - Vírivka pre 4-5 osoby</h2>
+        <p id="feed-status">Načítavam XML feed...</p>
+
+        <div id="models-grid" class="products-grid"></div>
+        <div id="models-empty" class="empty-state" style="display:none;">V tejto kategórii sa zatiaľ nenašli produkty.</div>
+
+        <div id="detail-panel" class="detail-panel">
+          <div class="detail-top">
+            <div class="detail-image" id="detail-image-wrap"></div>
+
+            <div>
+              <div class="detail-title" id="detail-title"></div>
+              <div class="detail-price" id="detail-price"></div>
+              <div class="detail-description" id="detail-description"></div>
+
+              <div id="detail-oblozenie-wrap" class="variant-wrap" style="display:none;">
+                <div class="variant-label">Farba obloženia</div>
+                <select id="detail-oblozenie" class="variant-select"></select>
+              </div>
+
+              <div id="detail-akryl-wrap" class="variant-wrap" style="display:none;">
+                <div class="variant-label">Farba akrylu</div>
+                <select id="detail-akryl" class="variant-select"></select>
+              </div>
+
+              <div class="qty-row">
+                <input id="detail-qty" class="qty-input" type="number" min="1" value="1" />
+              </div>
+
+              <div class="product-actions">
+                <button type="button" class="product-button" onclick="addCurrentDetailToCart()">Pridať do košíka</button>
+                <button type="button" class="product-button" onclick="saveCurrentDetailToFavorites()">♡ Uložiť</button>
+                <button type="button" class="product-button" onclick="closeDetail()">Zavrieť detail</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="logo-bottom">
+          <img src="logo-gold.png" alt="Logo Platinum Lech Spa">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Pridané do košíka</div>
+
+  <script>
+    const FEED_URL = 'https://www.virivkyonline.sk/universal.xml';
+    const FEED_PROXY_URL = 'https://virivkyapp.lechstav.workers.dev/feed?url=' + encodeURIComponent(FEED_URL);
+
+    let currentModel = null;
+    let toastTimeout = null;
+
+    function showToast(message = 'Pridané do košíka') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function textFromNode(node, selectors) {
+      for (const selector of selectors) {
+        const found = node.querySelector(selector);
+        if (found && found.textContent) return found.textContent.trim();
+      }
+      return '';
+    }
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function priceToDisplay(priceText) {
+      if (!priceText) return 'Cena na vyžiadanie';
+      return String(priceText).replace(/\s+/g, ' ').trim();
+    }
+
+    function parsePriceNumber(priceText) {
+      if (!priceText) return 0;
+      const cleaned = String(priceText).replace(',', '.').replace(/[^0-9.]/g, '');
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function normalizeBaseTitle(title) {
+      return (title || '')
+        .replace(/\s+/g, ' ')
+        .replace(/farba\s+oblozenia.*$/i, '')
+        .replace(/farba\s+obloženia.*$/i, '')
+        .replace(/farba\s+akrylu.*$/i, '')
+        .trim();
+    }
+
+    function parseParams(node) {
+      const params = [];
+      const paramNodes = node.querySelectorAll('PARAM');
+
+      paramNodes.forEach(paramNode => {
+        const name = textFromNode(paramNode, ['PARAM_NAME', 'NAME', 'param_name']);
+        const value = textFromNode(paramNode, ['VAL', 'VALUE', 'val']);
+        if (name && value) params.push({ name, value });
+      });
+
+      return params;
+    }
+
+    function getParamValue(params, names) {
+      for (const p of (params || [])) {
+        const pname = (p.name || '').toLowerCase();
+        if (names.some(n => pname.includes(n))) return (p.value || '').trim();
+      }
+      return '';
+    }
+
+    function getVariantValues(params, names) {
+      const values = [];
+      params.forEach(p => {
+        const pname = (p.name || '').toLowerCase();
+        if (names.some(n => pname.includes(n))) values.push(p.value);
+      });
+      return [...new Set(values)];
+    }
+
+    function isFourFiveCategory(product) {
+      const text = [
+        product.title || '',
+        product.description || '',
+        product.category || '',
+        ...((product.params || []).map(p => `${p.name} ${p.value}`))
+      ].join(' ').toLowerCase().replace(/\s+/g, ' ');
+
+      return (
+        text.includes('4-5') ||
+        text.includes('4 5') ||
+        text.includes('4 osoby') ||
+        text.includes('5 osoby') ||
+        text.includes('5 osôb') ||
+        text.includes('5 osob') ||
+        text.includes('4 miest') ||
+        text.includes('5 miest')
+      );
+    }
+
+    function parseXmlToProducts(xmlText) {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+      const parseError = xmlDoc.querySelector('parsererror');
+      if (parseError) throw new Error('XML sa nepodarilo spracovať.');
+
+      const itemNodes = xmlDoc.querySelectorAll('SHOPITEM, item, PRODUCT, product, entry');
+      const products = [];
+
+      itemNodes.forEach((node, index) => {
+        const title = textFromNode(node, ['PRODUCT', 'PRODUCTNAME', 'NAME', 'title', 'name']);
+        const description = textFromNode(node, ['DESCRIPTION', 'SHORT_DESCRIPTION', 'ANNOTATION', 'description', 'summary']);
+        const image = textFromNode(node, ['IMGURL', 'IMGURL_ALTERNATIVE', 'IMAGE', 'PRODUCT_IMAGE', 'image']);
+        const category = textFromNode(node, ['CATEGORYTEXT', 'CATEGORY', 'CATEGORY_NAME', 'product_type']);
+        const price = textFromNode(node, ['PRICE_VAT', 'PRICE', 'price']);
+        const link = textFromNode(node, ['URL', 'URL_PRODUCT', 'PRODUCT_URL', 'link']);
+        const params = parseParams(node);
+
+        if (title || link) {
+          products.push({
+            id: link || `${title}-${index}`,
+            title,
+            description,
+            image,
+            category,
+            price,
+            link,
+            params
+          });
+        }
+      });
+
+      return products;
+    }
+
+    function buildModelMap(products) {
+      const modelMap = {};
+
+      products.filter(isFourFiveCategory).forEach(product => {
+        const baseTitle = normalizeBaseTitle(product.title) || product.title || product.id;
+        const key = baseTitle.toLowerCase();
+
+        if (!modelMap[key]) {
+          modelMap[key] = {
+            modelKey: key,
+            title: baseTitle,
+            image: product.image || '',
+            description: product.description || '',
+            priceText: product.price || '',
+            minPrice: parsePriceNumber(product.price),
+            variants: [],
+            allAkryl: new Set(),
+            allOblozenie: new Set()
+          };
+        }
+
+        const group = modelMap[key];
+
+        if (!group.image && product.image) group.image = product.image;
+        if ((!group.description || group.description.length < product.description.length) && product.description) {
+          group.description = product.description;
+        }
+
+        const priceNum = parsePriceNumber(product.price);
+        if (!group.priceText || (priceNum > 0 && (group.minPrice === 0 || priceNum < group.minPrice))) {
+          group.minPrice = priceNum;
+          group.priceText = product.price || '';
+        }
+
+        const akryl = getParamValue(product.params, ['akryl']) || '';
+        const oblozenie = getParamValue(product.params, ['obložen', 'oblozen', 'panel', 'farba oblo']) || '';
+
+        if (akryl) group.allAkryl.add(akryl);
+        if (oblozenie) group.allOblozenie.add(oblozenie);
+
+        group.variants.push({
+          id: product.id,
+          title: product.title,
+          description: product.description,
+          image: product.image,
+          price: product.price,
+          priceNum: priceNum,
+          akryl,
+          oblozenie
+        });
+      });
+
+      return Object.values(modelMap).sort((a, b) => a.title.localeCompare(b.title, 'sk'));
+    }
+
+    function renderModels(models) {
+      const grid = document.getElementById('models-grid');
+      const empty = document.getElementById('models-empty');
+
+      grid.innerHTML = '';
+      closeDetail();
+
+      if (!models.length) {
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+
+      models.forEach(model => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+
+        const imageHtml = model.image
+          ? `<div class="product-image-wrap"><img src="${escapeHtml(model.image)}" alt="${escapeHtml(model.title)}"></div>`
+          : `<div class="product-image-wrap"><span style="color:#cfd6e2;font-size:14px;">Bez obrázka</span></div>`;
+
+        card.innerHTML = `
+          ${imageHtml}
+          <div class="product-body">
+            <div class="product-title">${escapeHtml(model.title)}</div>
+            <div class="product-price">${escapeHtml(priceToDisplay(model.priceText))}</div>
+            <div class="product-desc">${escapeHtml(model.description || 'Bez popisu produktu.')}</div>
+            <div class="product-actions">
+              <button class="product-button" type="button">Otvoriť detail</button>
+            </div>
+          </div>
+        `;
+
+        card.querySelector('button').addEventListener('click', () => openDetail(model));
+        grid.appendChild(card);
+      });
+    }
+
+    function getCheapestVariant(model) {
+      const priced = (model.variants || []).filter(v => (v.priceNum || 0) > 0);
+      if (priced.length) return priced.sort((a, b) => a.priceNum - b.priceNum)[0];
+      return (model.variants || [])[0] || null;
+    }
+
+    function findVariantForSelection(model, oblozenie, akryl) {
+      let variants = [...(model.variants || [])];
+
+      if (oblozenie) {
+        const filtered = variants.filter(v => (v.oblozenie || '') === oblozenie);
+        if (filtered.length) variants = filtered;
+      }
+
+      if (akryl) {
+        const filtered = variants.filter(v => (v.akryl || '') === akryl);
+        if (filtered.length) variants = filtered;
+      }
+
+      return variants[0] || getCheapestVariant(model);
+    }
+
+    function openDetail(model) {
+      currentModel = model;
+
+      const panel = document.getElementById('detail-panel');
+      const imageWrap = document.getElementById('detail-image-wrap');
+      const titleEl = document.getElementById('detail-title');
+      const priceEl = document.getElementById('detail-price');
+      const descEl = document.getElementById('detail-description');
+
+      const akrylWrap = document.getElementById('detail-akryl-wrap');
+      const oblozenieWrap = document.getElementById('detail-oblozenie-wrap');
+      const akrylSelect = document.getElementById('detail-akryl');
+      const oblozenieSelect = document.getElementById('detail-oblozenie');
+
+      titleEl.textContent = model.title || 'Bez názvu';
+      priceEl.textContent = priceToDisplay(model.priceText);
+      descEl.textContent = model.description || 'Bez popisu produktu.';
+      document.getElementById('detail-qty').value = 1;
+
+      if (model.image) {
+        imageWrap.innerHTML = `<img src="${escapeHtml(model.image)}" alt="${escapeHtml(model.title)}">`;
+      } else {
+        imageWrap.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#cfd6e2;">Bez obrázka</div>`;
+      }
+
+      const oblozenieValues = [...model.allOblozenie];
+      const akrylValues = [...model.allAkryl];
+
+      if (oblozenieValues.length) {
+        oblozenieWrap.style.display = 'block';
+        oblozenieSelect.innerHTML = oblozenieValues.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+      } else {
+        oblozenieWrap.style.display = 'none';
+        oblozenieSelect.innerHTML = '';
+      }
+
+      if (akrylValues.length) {
+        akrylWrap.style.display = 'block';
+        akrylSelect.innerHTML = akrylValues.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+      } else {
+        akrylWrap.style.display = 'none';
+        akrylSelect.innerHTML = '';
+      }
+
+      updateDetailPriceFromSelection();
+      panel.classList.add('show');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function closeDetail() {
+      currentModel = null;
+      document.getElementById('detail-panel').classList.remove('show');
+    }
+
+    function updateDetailPriceFromSelection() {
+      if (!currentModel) return;
+
+      const oblozenie = document.getElementById('detail-oblozenie').value || '';
+      const akryl = document.getElementById('detail-akryl').value || '';
+      const variant = findVariantForSelection(currentModel, oblozenie, akryl);
+
+      if (variant) {
+        document.getElementById('detail-price').textContent = priceToDisplay(variant.price || currentModel.priceText);
+        if (variant.image) {
+          document.getElementById('detail-image-wrap').innerHTML =
+            `<img src="${escapeHtml(variant.image)}" alt="${escapeHtml(currentModel.title)}">`;
+        }
+      }
+    }
+
+    function getCart() {
+      try {
+        return JSON.parse(localStorage.getItem('platinum_cart') || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function saveCart(cart) {
+      localStorage.setItem('platinum_cart', JSON.stringify(cart));
+    }
+
+    function addCurrentDetailToCart() {
+      if (!currentModel) return;
+
+      const oblozenie = document.getElementById('detail-oblozenie').value || '';
+      const akryl = document.getElementById('detail-akryl').value || '';
+      const qty = Math.max(1, parseInt(document.getElementById('detail-qty').value || '1', 10));
+      const variant = findVariantForSelection(currentModel, oblozenie, akryl);
+
+      const cart = getCart();
+      cart.push({
+        id: variant?.id || currentModel.modelKey,
+        title: currentModel.title,
+        price: variant?.price || currentModel.priceText || '',
+        image: variant?.image || currentModel.image || '',
+        qty,
+        oblozenie,
+        akryl
+      });
+      saveCart(cart);
+      showToast('Pridané do košíka');
+    }
+
+    function getFavorites() {
+      try {
+        return JSON.parse(localStorage.getItem('platinum_favorites') || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function saveFavorites(favorites) {
+      localStorage.setItem('platinum_favorites', JSON.stringify(favorites));
+    }
+
+    function saveCurrentDetailToFavorites() {
+      if (!currentModel) return;
+
+      const oblozenie = document.getElementById('detail-oblozenie').value || '';
+      const akryl = document.getElementById('detail-akryl').value || '';
+      const variant = findVariantForSelection(currentModel, oblozenie, akryl);
+
+      const favorites = getFavorites();
+      const item = {
+        id: variant?.id || currentModel.modelKey,
+        title: currentModel.title,
+        price: variant?.price || currentModel.priceText || '',
+        image: variant?.image || currentModel.image || '',
+        oblozenie,
+        akryl
+      };
+
+      const exists = favorites.some(f =>
+        f.id === item.id &&
+        (f.oblozenie || '') === (item.oblozenie || '') &&
+        (f.akryl || '') === (item.akryl || '')
+      );
+
+      if (exists) {
+        showToast('Produkt už je v obľúbených');
+        return;
+      }
+
+      favorites.push(item);
+      saveFavorites(favorites);
+      showToast('Uložené do obľúbených');
+    }
+
+    document.getElementById('detail-oblozenie').addEventListener('change', updateDetailPriceFromSelection);
+    document.getElementById('detail-akryl').addEventListener('change', updateDetailPriceFromSelection);
+
+    async function fetchFeedText() {
+      try {
+        const direct = await fetch(FEED_URL, { cache: 'no-store' });
+        if (direct.ok) return await direct.text();
+      } catch (e) {}
+
+      const proxied = await fetch(FEED_PROXY_URL, { cache: 'no-store' });
+      if (!proxied.ok) throw new Error('Feed sa nepodarilo načítať ani cez proxy.');
+      return await proxied.text();
+    }
+
+    async function loadFeed() {
+      const status = document.getElementById('feed-status');
+      status.textContent = 'Načítavam XML feed...';
+
+      try {
+        const xmlText = await fetchFeedText();
+        const products = parseXmlToProducts(xmlText);
+        const models = buildModelMap(products);
+        renderModels(models);
+        status.textContent = `Načítané modely: ${models.length}`;
+      } catch (error) {
+        status.textContent = 'Chyba pri načítaní feedu: ' + (error.message || 'Neznáma chyba');
+      }
+    }
+
+    loadFeed();
+  </script>
+</body>
+</html>
