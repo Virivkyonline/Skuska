@@ -664,15 +664,28 @@
       return (product.shortDescription || product.description || '').trim();
     }
 
+    function sanitizeVariantName(name) {
+      return String(name || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function normalizeVariantKey(name, values) {
+      return (String(name || '').toLowerCase().trim() + '|' + values.map(v => String(v).toLowerCase().trim()).join('|'));
+    }
+
     async function fetchProductDetail(url) {
       const response = await fetch(API_BASE + '/product-detail?url=' + encodeURIComponent(url), {
         cache: 'no-store'
       });
 
-      const data = await response.json();
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (e) {
+        throw new Error('Worker nevrátil JSON.');
+      }
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Nepodarilo sa načítať detail produktu.');
+      if (!response.ok || !data.success || !data.product) {
+        throw new Error(data?.error || 'Nepodarilo sa načítať detail produktu.');
       }
 
       return data.product;
@@ -687,20 +700,35 @@
       grid.innerHTML = '';
       empty.style.display = 'none';
 
-      try {
-        const loaded = [];
+      const results = await Promise.allSettled(
+        PRODUCT_URLS.map(url => fetchProductDetail(url))
+      );
 
-        for (const url of PRODUCT_URLS) {
-          const product = await fetchProductDetail(url);
-          loaded.push(product);
+      const okProducts = [];
+      let failedCount = 0;
+
+      results.forEach(result => {
+        if (result.status === 'fulfilled') {
+          okProducts.push(result.value);
+        } else {
+          failedCount += 1;
         }
+      });
 
-        products = loaded;
-        renderProducts();
-        status.textContent = 'Načítané produkty: ' + products.length;
-      } catch (error) {
-        status.textContent = 'Chyba pri načítaní produktov: ' + (error.message || 'Neznáma chyba');
+      products = okProducts;
+      renderProducts();
+
+      if (!products.length) {
+        status.textContent = 'Nepodarilo sa načítať žiadne produkty.';
         empty.style.display = 'block';
+        empty.textContent = 'Žiadne produkty sa nepodarilo načítať.';
+        return;
+      }
+
+      if (failedCount > 0) {
+        status.textContent = `Načítané produkty: ${products.length}. Niektoré produkty sa nepodarilo načítať (${failedCount}).`;
+      } else {
+        status.textContent = `Načítané produkty: ${products.length}`;
       }
     }
 
@@ -788,9 +816,9 @@
       akrylSelect.innerHTML = '';
       genericWrap.innerHTML = '';
 
-      const oblozenie = Array.isArray(product.variants?.oblozenie) ? product.variants.oblozenie : [];
-      const akryl = Array.isArray(product.variants?.akryl) ? product.variants.akryl : [];
-      const generic = Array.isArray(product.variants?.generic) ? product.variants.generic : [];
+      const oblozenie = Array.isArray(product?.variants?.oblozenie) ? product.variants.oblozenie : [];
+      const akryl = Array.isArray(product?.variants?.akryl) ? product.variants.akryl : [];
+      const generic = Array.isArray(product?.variants?.generic) ? product.variants.generic : [];
 
       if (oblozenie.length) {
         oblozenieWrap.style.display = 'block';
@@ -809,11 +837,12 @@
       const genericSeen = new Set();
 
       generic.forEach(group => {
-        const name = String(group.name || '').trim();
-        const values = Array.isArray(group.values) ? group.values : [];
+        const name = sanitizeVariantName(group?.name || '');
+        const values = Array.isArray(group?.values) ? group.values.filter(v => String(v || '').trim()) : [];
         if (!name || !values.length) return;
 
         const lower = name.toLowerCase();
+
         if (
           lower.includes('farba obloženia') ||
           lower.includes('farba oblozenia') ||
@@ -825,7 +854,7 @@
           return;
         }
 
-        const key = lower + '|' + values.join('|').toLowerCase();
+        const key = normalizeVariantKey(name, values);
         if (genericSeen.has(key)) return;
         genericSeen.add(key);
 
