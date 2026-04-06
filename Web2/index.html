@@ -334,7 +334,6 @@
       background: rgba(255,255,255,0.92);
       color: #111827;
       box-shadow: none;
-      padding: 12px 14px;
     }
 
     .qty-row {
@@ -348,7 +347,6 @@
       background: rgba(255,255,255,0.92);
       color: #111827;
       box-shadow: none;
-      padding: 12px 14px;
       max-width: 110px;
     }
 
@@ -530,8 +528,11 @@
           <form id="orderForm">
             <input type="text" id="order_name" placeholder="Meno a priezvisko" required />
             <input type="email" id="order_email" placeholder="Email" required />
-            <input type="tel" id="order_phone" placeholder="Telefón" />
-            <input type="text" id="order_address" placeholder="Adresa doručenia" />
+            <input type="tel" id="order_phone" placeholder="Telefónne číslo" required />
+            <input type="text" id="order_street" placeholder="Ulica" required />
+            <input type="text" id="order_house_number" placeholder="Súpisné / orientačné číslo" required />
+            <input type="text" id="order_zip" placeholder="PSČ" required />
+            <input type="text" id="order_city" placeholder="Mesto" required />
             <textarea id="order_note" placeholder="Poznámka k objednávke"></textarea>
 
             <div class="cart-buttons">
@@ -610,75 +611,70 @@
         .trim();
     }
 
-    function getLeafCategory(name) {
-      if (!name) return 'Ostatné produkty';
+    function getLeafCategory(name, title = '') {
+      const source = `${name || ''} ${title || ''}`.toLowerCase()
+        .replace(/\|/g, ' ')
+        .replace(/>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
-      const normalized = name
+      if (
+        source.includes('dve osoby') ||
+        source.includes('dvojmiest') ||
+        source.includes('2 osoby') ||
+        source.includes('2-3') ||
+        source.includes('2 3') ||
+        source.includes('2 miest') ||
+        source.includes('3 miest') ||
+        source.includes('3 osoby') ||
+        source.includes('male virivky') ||
+        source.includes('malé vírivky') ||
+        source.includes('kompaktna') ||
+        source.includes('kompaktná') ||
+        source.includes('small spa')
+      ) {
+        return 'Najlepšie vírivky (vírivky pre dve osoby)';
+      }
+
+      if (
+        source.includes('6 osôb') ||
+        source.includes('6 osob') ||
+        source.includes('6 osoby') ||
+        source.includes('6 miest') ||
+        source.includes('a viac') ||
+        source.includes('6+') ||
+        source.includes('7 osob') ||
+        source.includes('7 miest') ||
+        source.includes('veľké vírivky') ||
+        source.includes('velke virivky') ||
+        source.includes('large spa')
+      ) {
+        return 'Vírivky pre 6 osôb a viac';
+      }
+
+      if (
+        source.includes('4-5') ||
+        source.includes('4 5') ||
+        source.includes('4 osoby') ||
+        source.includes('5 osoby') ||
+        source.includes('5 osôb') ||
+        source.includes('5 osob')
+      ) {
+        return 'Vírivka pre 4-5 osoby';
+      }
+
+      if (source.includes('na splátky') || source.includes('na splatky')) {
+        return 'NA SPLÁTKY';
+      }
+
+      const normalized = (name || '')
         .replace(/\|/g, '/')
         .replace(/>/g, '/')
         .replace(/\s+/g, ' ')
         .trim();
 
       const parts = normalized.split('/').map(x => x.trim()).filter(Boolean);
-      const fullLower = normalized.toLowerCase();
-      let leaf = parts.length ? parts[parts.length - 1] : normalized;
-      const lower = leaf.toLowerCase();
-
-      if (
-        fullLower.includes('virivky balboa') &&
-        (
-          lower.includes('dve osoby') ||
-          lower.includes('dvojmiest') ||
-          lower.includes('2 osoby') ||
-          lower.includes('2-3') ||
-          lower.includes('2 / 3') ||
-          lower.includes('2 miest') ||
-          lower.includes('3 miest') ||
-          lower.includes('3 osoby') ||
-          lower.includes('najlepšie vírivky') ||
-          lower.includes('najlepsie virivky') ||
-          lower.includes('malé vírivky') ||
-          lower.includes('male virivky')
-        )
-      ) {
-        return 'Najlepšie vírivky (vírivky pre dve osoby)';
-      }
-
-      if (
-        fullLower.includes('virivky balboa') &&
-        (
-          lower.includes('6 osôb') ||
-          lower.includes('6 osob') ||
-          lower.includes('6 osoby') ||
-          lower.includes('6 miest') ||
-          lower.includes('a viac') ||
-          lower.includes('6+') ||
-          lower.includes('7 osob') ||
-          lower.includes('7 miest') ||
-          lower.includes('veľké vírivky') ||
-          lower.includes('velke virivky')
-        )
-      ) {
-        return 'Vírivky pre 6 osôb a viac';
-      }
-
-      if (
-        fullLower.includes('virivky balboa') &&
-        (
-          lower.includes('4-5') ||
-          lower.includes('4 / 5') ||
-          lower.includes('4 osoby') ||
-          lower.includes('5 osoby')
-        )
-      ) {
-        return 'Vírivka pre 4-5 osoby';
-      }
-
-      if (lower.includes('na splátky') || lower.includes('na splatky')) {
-        return 'NA SPLÁTKY';
-      }
-
-      return leaf;
+      return parts.length ? parts[parts.length - 1] : (normalized || 'Ostatné produkty');
     }
 
     function shouldHideCategory(fullCategory, leafCategory) {
@@ -753,7 +749,7 @@
             description,
             image,
             category,
-            leafCategory: getLeafCategory(category),
+            leafCategory: getLeafCategory(category, title),
             price,
             link,
             params,
@@ -1029,8 +1025,6 @@
         categoryMap = buildCategoryMap(allProducts);
         buildCategoryButtons();
 
-        console.log('Najdene kategorie:', Object.keys(categoryMap));
-
         const forcedStartOrder = [
           'Najlepšie vírivky (vírivky pre dve osoby)',
           'Vírivka pre 4-5 osoby',
@@ -1092,13 +1086,36 @@
         return;
       }
 
+      const meno = document.getElementById('order_name').value.trim();
+      const email = document.getElementById('order_email').value.trim();
+      const phone = document.getElementById('order_phone').value.trim();
+      const street = document.getElementById('order_street').value.trim();
+      const houseNumber = document.getElementById('order_house_number').value.trim();
+      const zip = document.getElementById('order_zip').value.trim();
+      const city = document.getElementById('order_city').value.trim();
+      const note = document.getElementById('order_note').value.trim();
+
+      if (!meno || !email || !phone || !street || !houseNumber || !zip || !city) {
+        status.textContent = 'Vyplň všetky povinné údaje.';
+        return;
+      }
+
+      const zipClean = zip.replace(/\s+/g, '');
+      if (!/^\d{5}$/.test(zipClean)) {
+        status.textContent = 'PSČ musí mať 5 číslic.';
+        return;
+      }
+
       const payload = {
         type: 'order',
-        meno: document.getElementById('order_name').value.trim(),
-        email: document.getElementById('order_email').value.trim(),
-        phone: document.getElementById('order_phone').value.trim(),
-        address: document.getElementById('order_address').value.trim(),
-        note: document.getElementById('order_note').value.trim(),
+        meno,
+        email,
+        phone,
+        street,
+        houseNumber,
+        zip: zipClean,
+        city,
+        note,
         items: cart
       };
 
