@@ -16,6 +16,10 @@ export default {
       return handleFeedProxy(url, corsHeaders);
     }
 
+    if (request.method === "GET" && url.pathname === "/product-detail") {
+      return handleProductDetail(url, corsHeaders);
+    }
+
     if (request.method === "POST" && url.pathname === "/order") {
       return handleOrder(request, env, corsHeaders);
     }
@@ -70,6 +74,365 @@ async function handleFeedProxy(url, corsHeaders) {
       headers: corsHeaders
     });
   }
+}
+
+async function handleProductDetail(url, corsHeaders) {
+  try {
+    const target = url.searchParams.get("url");
+
+    if (!target) {
+      return jsonResponse(
+        { success: false, error: "Chyba: chyba url parameter." },
+        400,
+        corsHeaders
+      );
+    }
+
+    let targetUrl;
+    try {
+      targetUrl = new URL(target);
+    } catch {
+      return jsonResponse(
+        { success: false, error: "Neplatna URL adresa produktu." },
+        400,
+        corsHeaders
+      );
+    }
+
+    if (!/virivkyonline\.sk$/i.test(targetUrl.hostname)) {
+      return jsonResponse(
+        { success: false, error: "Povolena je iba domena virivkyonline.sk." },
+        400,
+        corsHeaders
+      );
+    }
+
+    const productResponse = await fetch(targetUrl.toString(), {
+      method: "GET",
+      headers: {
+        "User-Agent": "Mozilla/5.0 PlatinumLechSpaApp/1.0",
+        "Accept-Language": "sk-SK,sk;q=0.9,en;q=0.8"
+      }
+    });
+
+    if (!productResponse.ok) {
+      return jsonResponse(
+        {
+          success: false,
+          error: "Nepodarilo sa nacitat stranku produktu.",
+          detail: "HTTP " + productResponse.status
+        },
+        productResponse.status,
+        corsHeaders
+      );
+    }
+
+    const html = await productResponse.text();
+    const data = parseProductHtml(html, targetUrl.toString());
+
+    return jsonResponse(
+      {
+        success: true,
+        product: data
+      },
+      200,
+      corsHeaders
+    );
+  } catch (e) {
+    return jsonResponse(
+      {
+        success: false,
+        error: "Chyba servera pri nacitani detailu produktu."
+      },
+      500,
+      corsHeaders
+    );
+  }
+}
+
+function parseProductHtml(html, productUrl) {
+  const cleanedHtml = removeScriptsAndStyles(html);
+
+  const title =
+    decodeHtmlEntities(
+      firstMatch(cleanedHtml, /<h1[^>]*>([\s\S]*?)<\/h1>/i) ||
+      firstMatch(cleanedHtml, /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"]+)["']/i) ||
+      firstMatch(cleanedHtml, /<title[^>]*>([\s\S]*?)<\/title>/i) ||
+      "Produkt"
+    ).trim();
+
+  const metaDescription = decodeHtmlEntities(
+    firstMatch(cleanedHtml, /<meta[^>]+name=["']description["'][^>]+content=["']([^"]+)["']/i) || ""
+  ).trim();
+
+  const mainImage = pickBestImage(cleanedHtml, productUrl, title);
+  const gallery = extractGalleryImages(cleanedHtml, productUrl);
+
+  const price =
+    decodeHtmlEntities(
+      firstMatch(cleanedHtml, /<meta[^>]+property=["']product:price:amount["'][^>]+content=["']([^"]+)["']/i) || ""
+    ).trim() ||
+    findPriceInHtml(cleanedHtml);
+
+  const description = extractDescription(cleanedHtml, metaDescription);
+  const variants = extractVariants(cleanedHtml);
+
+  return {
+    url: productUrl,
+    title,
+    price,
+    image: mainImage,
+    gallery,
+    description,
+    variants
+  };
+}
+
+function removeScriptsAndStyles(html) {
+  return String(html || "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, "");
+}
+
+function firstMatch(text, regex) {
+  const m = text.match(regex);
+  return m && m[1] ? m[1] : "";
+}
+
+function stripTags(text) {
+  return decodeHtmlEntities(
+    String(text || "")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n")
+      .replace(/<\/div>/gi, "\n")
+      .replace(/<\/li>/gi, "\n")
+      .replace(/<li[^>]*>/gi, "- ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\u00a0/g, " ")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n\s+\n/g, "\n\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
+}
+
+function decodeHtmlEntities(text) {
+  return String(text || "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#039;/gi, "'")
+    .replace(/&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">");
+}
+
+function absolutizeUrl(url, base) {
+  try {
+    return new URL(url, base).toString();
+  } catch {
+    return "";
+  }
+}
+
+function scoreImageUrl(url, title) {
+  const u = String(url || "").toLowerCase();
+  const words = String(title || "").toLowerCase().split(/\s+/).filter(w => w.length > 2);
+
+  let score = 0;
+
+  if (u.includes("cdn.myshoptet.com")) score += 30;
+  if (u.endsWith(".jpg") || u.endsWith(".jpeg") || u.endsWith(".png") || u.endsWith(".webp")) score += 10;
+  if (u.includes("og-image")) score += 20;
+  if (u.includes("product")) score += 10;
+  if (u.includes("thumb")) score -= 20;
+  if (u.includes("icon")) score -= 30;
+  if (u.includes("logo")) score -= 30;
+  if (u.includes("banner")) score -= 10;
+
+  for (const w of words) {
+    if (u.includes(w)) score += 3;
+  }
+
+  return score;
+}
+
+function extractGalleryImages(html, baseUrl) {
+  const matches = [];
+  const regex = /<(meta|img)[^>]+(?:content|src)=["']([^"']+)["'][^>]*>/gi;
+  let m;
+
+  while ((m = regex.exec(html)) !== null) {
+    const raw = m[2] || "";
+    if (!raw) continue;
+
+    const full = absolutizeUrl(raw, baseUrl);
+    if (!full) continue;
+
+    const lower = full.toLowerCase();
+
+    if (
+      lower.includes(".jpg") ||
+      lower.includes(".jpeg") ||
+      lower.includes(".png") ||
+      lower.includes(".webp")
+    ) {
+      if (
+        lower.includes("cdn.myshoptet.com") ||
+        lower.includes("virivkyonline.sk") ||
+        lower.includes("myshoptet")
+      ) {
+        matches.push(full);
+      }
+    }
+  }
+
+  return [...new Set(matches)];
+}
+
+function pickBestImage(html, baseUrl, title) {
+  const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
+  if (ogImage) {
+    const full = absolutizeUrl(ogImage, baseUrl);
+    if (full) return full;
+  }
+
+  const images = extractGalleryImages(html, baseUrl);
+  if (!images.length) return "";
+
+  return images.sort((a, b) => scoreImageUrl(b, title) - scoreImageUrl(a, title))[0];
+}
+
+function findPriceInHtml(html) {
+  const text = stripTags(html);
+  const eurMatch = text.match(/(?:od\s*)?€\s*[0-9][0-9\s.,]*/i);
+  if (eurMatch) {
+    return eurMatch[0].replace(/\s+/g, " ").trim();
+  }
+
+  const eurAfterMatch = text.match(/(?:od\s*)?[0-9][0-9\s.,]*\s*€/i);
+  if (eurAfterMatch) {
+    return eurAfterMatch[0].replace(/\s+/g, " ").trim();
+  }
+
+  return "";
+}
+
+function extractDescription(html, fallback) {
+  const candidates = [
+    /<div[^>]*class=["'][^"']*description-inner[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
+    /<div[^>]*class=["'][^"']*product-description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
+    /<div[^>]*id=["'][^"']*description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
+    /<section[^>]*class=["'][^"']*description[^"']*["'][^>]*>([\s\S]*?)<\/section>/i
+  ];
+
+  for (const regex of candidates) {
+    const found = firstMatch(html, regex);
+    const stripped = stripTags(found);
+    if (stripped && stripped.length > 80) {
+      return stripped;
+    }
+  }
+
+  return fallback || "";
+}
+
+function extractVariants(html) {
+  const text = stripTags(html);
+
+  const oblozenie = extractVariantBlock(
+    html,
+    text,
+    [
+      "FARBA OBLOŽENIA A SCHODÍKOV",
+      "FARBA OBLOZENIA A SCHODIKOV",
+      "FARBA OBLOŽENIA",
+      "FARBA OBLOZENIA",
+      "OBLOŽENIE",
+      "OBLOZENIE"
+    ]
+  );
+
+  const akryl = extractVariantBlock(
+    html,
+    text,
+    [
+      "FARBA AKRYLU NA VÝBER",
+      "FARBA AKRYLU NA VYBER",
+      "FARBA AKRYLU",
+      "AKRYL"
+    ]
+  );
+
+  return {
+    oblozenie,
+    akryl
+  };
+}
+
+function extractVariantBlock(html, plainText, labels) {
+  for (const label of labels) {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const selectRegex = new RegExp(
+      escaped + "[\\s\\S]{0,250}?<select[\\s\\S]*?<\\/select>",
+      "i"
+    );
+    const selectMatch = html.match(selectRegex);
+
+    if (selectMatch) {
+      const optionValues = extractOptionsFromSelect(selectMatch[0]);
+      if (optionValues.length) return optionValues;
+    }
+
+    const textRegex = new RegExp(
+      escaped + "\\s+Zvoľte variant\\s+([\\s\\S]*?)(?:\\n\\s*[A-ZÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ][^\\n]*Zvoľte variant|\\n\\s*Kód:|\\n\\s*Cena:|\\n\\s*€|$)",
+      "i"
+    );
+    const textMatch = plainText.match(textRegex);
+
+    if (textMatch && textMatch[1]) {
+      const values = textMatch[1]
+        .replace(/\s+/g, " ")
+        .trim()
+        .split(" ")
+        .map(x => x.trim())
+        .filter(Boolean)
+        .filter(x => !/^zvoľte$/i.test(x))
+        .filter(x => !/^zvolte$/i.test(x))
+        .filter(x => !/^variant$/i.test(x))
+        .filter(x => !/^reset$/i.test(x))
+        .filter(x => !/^vybraných$/i.test(x))
+        .filter(x => !/^parametrov\.?$/i.test(x));
+
+      if (values.length) return [...new Set(values)];
+    }
+  }
+
+  return [];
+}
+
+function extractOptionsFromSelect(selectHtml) {
+  const options = [];
+  const optionRegex = /<option[^>]*value=["']?([^"'>]*)["']?[^>]*>([\s\S]*?)<\/option>/gi;
+  let m;
+
+  while ((m = optionRegex.exec(selectHtml)) !== null) {
+    const value = stripTags(m[1] || "").trim();
+    const label = stripTags(m[2] || "").trim();
+    const finalValue = label || value;
+
+    if (!finalValue) continue;
+    if (/zvoľte/i.test(finalValue)) continue;
+    if (/zvolte/i.test(finalValue)) continue;
+    if (/vyberte/i.test(finalValue)) continue;
+    if (/reset/i.test(finalValue)) continue;
+
+    options.push(finalValue);
+  }
+
+  return [...new Set(options)];
 }
 
 async function handleContactForm(request, env, corsHeaders) {
@@ -354,4 +717,4 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-      }
+        }
