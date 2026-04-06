@@ -32,7 +32,6 @@
 
     body {
       background-color: var(--bg-color);
-      /* Ak chces pozadie obrazkom, odkomentuj tieto riadky */
       /* background-image: url('bublinky.png'); */
       /* background-size: cover; */
       /* background-position: center; */
@@ -351,6 +350,7 @@
           document.getElementById('contactForm').reset();
         } else {
           status.textContent = 'Chyba: ' + (data.detail || data.error || 'Odoslanie zlyhalo.');
+        }
       } catch (error) {
         status.textContent = 'Chyba spojenia so serverom.';
       }
