@@ -220,7 +220,6 @@
     }
 
     .action-row,
-    .form-buttons,
     .cart-buttons {
       display: flex;
       flex-direction: column;
@@ -807,7 +806,9 @@
         akrylWrap.style.display = 'none';
       }
 
-      generic.forEach((group, index) => {
+      const genericSeen = new Set();
+
+      generic.forEach(group => {
         const name = String(group.name || '').trim();
         const values = Array.isArray(group.values) ? group.values : [];
         if (!name || !values.length) return;
@@ -823,6 +824,10 @@
         ) {
           return;
         }
+
+        const key = lower + '|' + values.join('|').toLowerCase();
+        if (genericSeen.has(key)) return;
+        genericSeen.add(key);
 
         const block = document.createElement('div');
         block.className = 'variant-block';
