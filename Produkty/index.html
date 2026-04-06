@@ -16,7 +16,6 @@
       --panel-bg: linear-gradient(180deg, #274a77 0%, #1f3d63 100%);
       --dark-card: rgba(10, 20, 36, 0.45);
       --success-green: #1f9d55;
-      --danger-red: #b91c1c;
     }
 
     * {
@@ -447,6 +446,19 @@
     let currentModel = null;
     let toastTimeout = null;
 
+    const FORCE_INCLUDE_NAMES = [
+      'aurora',
+      'split',
+      'spring',
+      'life',
+      'new maximus',
+      'new maximus life',
+      'new maximus deluxe',
+      'maximus',
+      'maximus life',
+      'maximus deluxe'
+    ];
+
     function showToast(message = 'Pridané do košíka') {
       const toast = document.getElementById('toast');
       toast.textContent = message;
@@ -490,6 +502,15 @@
     function normalizeBaseTitle(title) {
       return (title || '')
         .replace(/\s+/g, ' ')
+        .replace(/\s*[–-]\s*luxusný.*$/i, '')
+        .replace(/\s*[–-]\s*luxusna.*$/i, '')
+        .replace(/\s*[–-]\s*luxus.*$/i, '')
+        .replace(/\s*[–-]\s*špičkový.*$/i, '')
+        .replace(/\s*[–-]\s*spickovy.*$/i, '')
+        .replace(/\s*[–-]\s*domáci.*$/i, '')
+        .replace(/\s*[–-]\s*domaci.*$/i, '')
+        .replace(/\s*[–-]\s*ponuka.*$/i, '')
+        .replace(/\s*[–-]\s*pre.*$/i, '')
         .replace(/farba\s+oblozenia.*$/i, '')
         .replace(/farba\s+obloženia.*$/i, '')
         .replace(/farba\s+akrylu.*$/i, '')
@@ -517,33 +538,93 @@
       return '';
     }
 
-    function getVariantValues(params, names) {
-      const values = [];
-      params.forEach(p => {
-        const pname = (p.name || '').toLowerCase();
-        if (names.some(n => pname.includes(n))) values.push(p.value);
-      });
-      return [...new Set(values)];
-    }
-
-    function isFourFiveCategory(product) {
-      const text = [
+    function mergedProductText(product) {
+      return [
         product.title || '',
         product.description || '',
         product.category || '',
         ...((product.params || []).map(p => `${p.name} ${p.value}`))
       ].join(' ').toLowerCase().replace(/\s+/g, ' ');
+    }
 
+    function hasFourFiveKeywords(text) {
       return (
         text.includes('4-5') ||
         text.includes('4 5') ||
+        text.includes('4-miest') ||
+        text.includes('5-miest') ||
+        text.includes('4 miest') ||
+        text.includes('5 miest') ||
         text.includes('4 osoby') ||
         text.includes('5 osoby') ||
+        text.includes('pre 4 osoby') ||
+        text.includes('pre 5 osoby') ||
+        text.includes('pre 5 osôb') ||
+        text.includes('pre 4 osôb') ||
         text.includes('5 osôb') ||
         text.includes('5 osob') ||
-        text.includes('4 miest') ||
-        text.includes('5 miest')
+        text.includes('4 osôb') ||
+        text.includes('4 osob') ||
+        text.includes('5-miestna') ||
+        text.includes('4-miestna') ||
+        text.includes('luxusná 4-miestna') ||
+        text.includes('luxusná 5-miestna') ||
+        text.includes('luxusna 4-miestna') ||
+        text.includes('luxusna 5-miestna')
       );
+    }
+
+    function hasSixPlusKeywords(text) {
+      return (
+        text.includes('6 osôb') ||
+        text.includes('6 osob') ||
+        text.includes('6 osoby') ||
+        text.includes('6 miest') ||
+        text.includes('6-miest') ||
+        text.includes('7 osôb') ||
+        text.includes('7 osob') ||
+        text.includes('8 osôb') ||
+        text.includes('8 osob') ||
+        text.includes('a viac') ||
+        text.includes('6+') ||
+        text.includes('7+') ||
+        text.includes('8+')
+      );
+    }
+
+    function hasTwoThreeKeywords(text) {
+      return (
+        text.includes('2 osoby') ||
+        text.includes('2 osôb') ||
+        text.includes('2 osob') ||
+        text.includes('3 osoby') ||
+        text.includes('3 osôb') ||
+        text.includes('3 osob') ||
+        text.includes('2-3') ||
+        text.includes('2 3') ||
+        text.includes('2-miest') ||
+        text.includes('3-miest') ||
+        text.includes('2 miest') ||
+        text.includes('3 miest') ||
+        text.includes('dvojmiest') ||
+        text.includes('kompaktná') ||
+        text.includes('kompaktna')
+      );
+    }
+
+    function isForcedIncludeByName(text) {
+      return FORCE_INCLUDE_NAMES.some(name => text.includes(name));
+    }
+
+    function isFourFiveCategory(product) {
+      const text = mergedProductText(product);
+
+      if (hasSixPlusKeywords(text)) return false;
+      if (hasTwoThreeKeywords(text)) return false;
+      if (hasFourFiveKeywords(text)) return true;
+      if (isForcedIncludeByName(text)) return true;
+
+      return false;
     }
 
     function parseXmlToProducts(xmlText) {
@@ -627,7 +708,7 @@
           description: product.description,
           image: product.image,
           price: product.price,
-          priceNum: priceNum,
+          priceNum,
           akryl,
           oblozenie
         });
@@ -879,3 +960,6 @@
   </script>
 </body>
 </html>
+
+
+
