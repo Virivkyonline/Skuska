@@ -15,6 +15,7 @@ export default {
     if (request.method === "GET" && url.pathname === "/feed") {
       try {
         const target = url.searchParams.get("url");
+
         if (!target) {
           return new Response("Missing url parameter", {
             status: 400,
