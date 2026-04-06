@@ -1,1 +1,1152 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doplnky a voliteľná výbava - Platinum Lech Spa</title>
+  <style>
+    :root {
+      --bg-color: #0B1320;
+      --title-text: #FFFFFF;
+      --center-text: #F3F4F6;
+      --accent-text: #D4AF37;
+      --button-text: #0B1320;
+      --muted-text: #D5D9E2;
+      --card-border: rgba(255,255,255,0.08);
+      --panel-bg: linear-gradient(180deg, #274a77 0%, #1f3d63 100%);
+      --dark-card: rgba(10, 20, 36, 0.45);
+      --success-green: #1f9d55;
+      --danger-red: #b91c1c;
+      --tab-bg: linear-gradient(180deg, #17345a 0%, #112947 100%);
+    }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--title-text);
+    }
+
+    body {
+      background-image: url('bublinky.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-color: var(--bg-color);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title-panel {
+      width: 100%;
+      background: var(--tab-bg);
+      text-align: center;
+      padding: 30px 16px 20px 16px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+    }
+
+    .title-panel h1 {
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: var(--title-text);
+      margin-bottom: 10px;
+    }
+
+    .title-panel p {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent-text);
+    }
+
+    .top-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 14px 14px 0 14px;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .top-tabs button {
+      width: 100%;
+      padding: 13px 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      background: linear-gradient(180deg, #e2bf4d 0%, #cfa72d 100%);
+      color: var(--button-text);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+    }
+
+    .top-tabs button.active {
+      background: linear-gradient(180deg, #fff3c4 0%, #dcb43f 100%);
+    }
+
+    .content {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 22px 14px;
+    }
+
+    .center-panel {
+      width: 100%;
+      max-width: 1100px;
+      background: var(--panel-bg);
+      border-radius: 28px;
+      padding: 26px 18px;
+      box-shadow: 0 18px 36px rgba(0,0,0,0.30);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .center-panel h2 {
+      font-size: 24px;
+      margin-bottom: 12px;
+      color: var(--title-text);
+      text-align: center;
+    }
+
+    .center-panel p {
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--center-text);
+      margin-bottom: 14px;
+    }
+
+    .page-section {
+      display: none;
+    }
+
+    .page-section.active {
+      display: block;
+    }
+
+    #status-home,
+    #status-detail,
+    #order-status {
+      margin-top: 10px;
+      font-size: 15px;
+      color: #FFFFFF;
+      text-align: left;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .product-card {
+      background: var(--dark-card);
+      border: 1px solid var(--card-border);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 14px 28px rgba(0,0,0,0.22);
+    }
+
+    .product-image-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: rgba(255,255,255,0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .product-image-wrap img,
+    .detail-main-image img,
+    .cart-thumb img,
+    .favorite-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .product-body {
+      padding: 16px;
+      text-align: left;
+    }
+
+    .product-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+
+    .product-price {
+      font-size: 22px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+    }
+
+    .product-desc,
+    .detail-description {
+      font-size: 14px;
+      color: var(--muted-text);
+      line-height: 1.55;
+      white-space: pre-line;
+    }
+
+    .product-desc {
+      margin-bottom: 12px;
+      display: -webkit-box;
+      -webkit-line-clamp: 5;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .action-row,
+    .form-buttons,
+    .cart-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn,
+    .variant-select,
+    .qty-input,
+    input,
+    textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      font-size: 16px;
+    }
+
+    .btn {
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.22s ease;
+      background: linear-gradient(180deg, #e2bf4d 0%, #cfa72d 100%);
+      color: var(--button-text);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+    }
+
+    .btn.secondary {
+      background: linear-gradient(180deg, #315887 0%, #244465 100%);
+      color: #fff;
+    }
+
+    .btn.danger {
+      background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+      color: #fff;
+    }
+
+    .variant-select,
+    .qty-input,
+    input,
+    textarea {
+      background: rgba(255,255,255,0.94);
+      color: #111827;
+      outline: none;
+      font-weight: 600;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .empty-state {
+      background: rgba(10, 20, 36, 0.35);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 20px;
+      color: var(--muted-text);
+      font-size: 15px;
+      text-align: left;
+      margin-top: 16px;
+    }
+
+    .detail-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .detail-main-image {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 20px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--card-border);
+    }
+
+    .detail-title {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .detail-price {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      color: #fff;
+    }
+
+    .variant-block {
+      margin-top: 12px;
+    }
+
+    .variant-label {
+      font-size: 14px;
+      color: var(--muted-text);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    .favorites-list,
+    .cart-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .favorite-item,
+    .cart-item {
+      background: var(--dark-card);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 84px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .favorite-thumb,
+    .cart-thumb {
+      width: 84px;
+      height: 84px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .favorite-title,
+    .cart-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .favorite-meta,
+    .cart-meta {
+      font-size: 14px;
+      color: var(--muted-text);
+      line-height: 1.5;
+    }
+
+    .cart-total {
+      margin-top: 16px;
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      text-align: left;
+    }
+
+    .inline-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .inline-row .btn,
+    .inline-row .qty-input {
+      width: auto;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .logo-bottom {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      min-height: 120px;
+      padding: 16px 16px 24px 16px;
+    }
+
+    .logo-bottom img {
+      max-width: 240px;
+      width: 60%;
+      height: auto;
+      display: block;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--success-green);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 9999;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 520px) {
+      .top-tabs button {
+        font-size: 13px;
+        padding: 12px 6px;
+      }
+    }
+
+    @media (min-width: 700px) {
+      .title-panel h1 {
+        font-size: 46px;
+      }
+
+      .title-panel p {
+        font-size: 20px;
+      }
+
+      .center-panel {
+        padding: 34px 28px;
+      }
+
+      .center-panel h2 {
+        font-size: 32px;
+      }
+
+      .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .detail-layout {
+        grid-template-columns: 380px 1fr;
+      }
+
+      .logo-bottom img {
+        max-width: 320px;
+      }
+    }
+
+    @media (min-width: 980px) {
+      .products-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="title-panel">
+      <h1>PLATINUM LECH SPA</h1>
+      <p>DOPLNKY A VOLITEĽNÁ VÝBAVA</p>
+    </div>
+
+    <div class="top-tabs">
+      <button id="tab-home" class="active" type="button" onclick="showSection('home')">Domov</button>
+      <button id="tab-detail" type="button" onclick="showSection('detail')">Detail</button>
+      <button id="tab-favorites" type="button" onclick="showSection('favorites'); renderFavorites();">Obľúbené</button>
+      <button id="tab-cart" type="button" onclick="showSection('cart'); renderCart();">Košík</button>
+    </div>
+
+    <div class="content">
+      <div class="center-panel">
+        <section id="section-home" class="page-section active">
+          <h2>Doplnky a voliteľná výbava</h2>
+          <p id="status-home">Načítavam produkty...</p>
+          <div id="products-grid" class="products-grid"></div>
+          <div id="products-empty" class="empty-state" style="display:none;">Žiadne produkty sa nenačítali.</div>
+        </section>
+
+        <section id="section-detail" class="page-section">
+          <h2>Detail produktu</h2>
+          <p id="status-detail">Vyber produkt.</p>
+
+          <div id="detail-empty" class="empty-state" style="display:none;">Detail produktu sa nepodarilo načítať.</div>
+
+          <div id="detail-wrap" style="display:none;">
+            <div class="detail-layout">
+              <div>
+                <div class="detail-main-image" id="detail-main-image"></div>
+              </div>
+
+              <div>
+                <div class="detail-title" id="detail-title"></div>
+                <div class="detail-price" id="detail-price"></div>
+                <div class="detail-description" id="detail-description"></div>
+
+                <div id="variant-oblozenie-wrap" class="variant-block" style="display:none;">
+                  <div class="variant-label">Farba obloženia</div>
+                  <select id="variant-oblozenie" class="variant-select"></select>
+                </div>
+
+                <div id="variant-akryl-wrap" class="variant-block" style="display:none;">
+                  <div class="variant-label">Farba akrylu</div>
+                  <select id="variant-akryl" class="variant-select"></select>
+                </div>
+
+                <div class="variant-block">
+                  <div class="variant-label">Počet kusov</div>
+                  <input id="detail-qty" class="qty-input" type="number" min="1" value="1">
+                </div>
+
+                <div class="action-row">
+                  <button class="btn" type="button" onclick="addDetailToCart()">Pridať do košíka</button>
+                  <button class="btn secondary" type="button" onclick="saveDetailToFavorites()">Uložiť do obľúbených</button>
+                  <button class="btn secondary" type="button" onclick="showSection('home')">Späť na produkty</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="section-favorites" class="page-section">
+          <h2>Obľúbené produkty</h2>
+          <p>Tu sa ukladajú tvoje obľúbené doplnky a výbava.</p>
+          <div id="favorites-list" class="favorites-list"></div>
+          <div class="action-row">
+            <button class="btn danger" type="button" onclick="clearFavorites()">Vymazať obľúbené</button>
+            <button class="btn secondary" type="button" onclick="showSection('home')">Späť na produkty</button>
+          </div>
+        </section>
+
+        <section id="section-cart" class="page-section">
+          <h2>Nákupný košík</h2>
+          <div id="cart-list" class="cart-list"></div>
+          <div id="cart-total" class="cart-total">Spolu: 0 €</div>
+
+          <h2 style="margin-top:28px;">Objednávka</h2>
+          <form id="orderForm">
+            <input type="text" id="order_name" placeholder="Meno a priezvisko" required>
+            <input type="email" id="order_email" placeholder="Email" required>
+            <input type="tel" id="order_phone" placeholder="Telefónne číslo" required>
+            <input type="text" id="order_street" placeholder="Ulica" required>
+            <input type="text" id="order_house_number" placeholder="Súpisné / orientačné číslo" required>
+            <input type="text" id="order_zip" placeholder="PSČ" required>
+            <input type="text" id="order_city" placeholder="Mesto" required>
+            <textarea id="order_note" placeholder="Poznámka k objednávke"></textarea>
+
+            <div class="cart-buttons">
+              <button class="btn" type="submit">Odoslať objednávku</button>
+              <button class="btn danger" type="button" onclick="clearCart()">Vymazať košík</button>
+              <button class="btn secondary" type="button" onclick="clearCustomerData()">Vymazať údaje zákazníka</button>
+              <button class="btn secondary" type="button" onclick="showSection('home')">Späť na produkty</button>
+            </div>
+          </form>
+
+          <p id="order-status"></p>
+        </section>
+
+        <div class="logo-bottom">
+          <img src="logo-gold.png" alt="Logo Platinum Lech Spa">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Pridané do košíka</div>
+
+  <script>
+    const API_BASE = 'https://virivkyapp.lechstav.workers.dev';
+    const PRODUCT_URLS = [
+      'https://www.virivkyonline.sk/nahradna-ziarovka-pre-uv-lampu/',
+      'https://www.virivkyonline.sk/termokryt-pre-virivku-zadanie-do-vyroby/',
+      'https://www.virivkyonline.sk/zdvihak-na-termokryt-luxus/',
+      'https://www.virivkyonline.sk/hydraulicky-zdvihak-lux/',
+      'https://www.virivkyonline.sk/byintek-u80-max/',
+      'https://www.virivkyonline.sk/bazenovy-vysavac-spa-vac-paradise/',
+      'https://www.virivkyonline.sk/konzolovy-slnecnik-270-x-270--vratane-zakladne-na-zemi--antracit/',
+      'https://www.virivkyonline.sk/tepelne-cerpadlo-zealux/',
+      'https://www.virivkyonline.sk/davkovacia-stanica-va-dos-basic-oxy-ph/',
+      'https://www.virivkyonline.sk/schodiky-standard/',
+      'https://www.virivkyonline.sk/barovy-stol-so-stolickami-2ks/',
+      'https://www.virivkyonline.sk/uv-lampa/',
+      'https://www.virivkyonline.sk/revolucny-automaticky-cistic-filtrov-estelle-revolucny/',
+      'https://www.virivkyonline.sk/predpriprava-na-tepelne-cerpadlo/',
+      'https://www.virivkyonline.sk/pop-up-led-repro/',
+      'https://www.virivkyonline.sk/wifi-modul/',
+      'https://www.virivkyonline.sk/barovy-stol-pre-virivku/',
+      'https://www.virivkyonline.sk/projektor-byintek-p20-dlp-3d-4k-android-os/'
+    ];
+
+    let products = [];
+    let detailProduct = null;
+    let toastTimeout = null;
+
+    function showSection(name) {
+      const all = ['home', 'detail', 'favorites', 'cart'];
+      all.forEach(section => {
+        document.getElementById('section-' + section).classList.remove('active');
+        const tab = document.getElementById('tab-' + section);
+        if (tab) tab.classList.remove('active');
+      });
+
+      document.getElementById('section-' + name).classList.add('active');
+      const currentTab = document.getElementById('tab-' + name);
+      if (currentTab) currentTab.classList.add('active');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message || 'Hotovo';
+      toast.classList.add('show');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function priceToDisplay(priceText) {
+      if (!priceText) return 'Cena na vyžiadanie';
+      return String(priceText).replace(/\s+/g, ' ').trim();
+    }
+
+    function parsePriceNumber(priceText) {
+      if (!priceText) return 0;
+      const cleaned = String(priceText).replace(',', '.').replace(/[^0-9.]/g, '');
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function getShortDescription(product) {
+      return (product.shortDescription || product.description || '').trim();
+    }
+
+    async function fetchProductDetail(url) {
+      const response = await fetch(API_BASE + '/product-detail?url=' + encodeURIComponent(url), {
+        cache: 'no-store'
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Nepodarilo sa načítať detail produktu.');
+      }
+
+      return data.product;
+    }
+
+    async function loadProducts() {
+      const status = document.getElementById('status-home');
+      const grid = document.getElementById('products-grid');
+      const empty = document.getElementById('products-empty');
+
+      status.textContent = 'Načítavam produkty...';
+      grid.innerHTML = '';
+      empty.style.display = 'none';
+
+      try {
+        const loaded = [];
+
+        for (const url of PRODUCT_URLS) {
+          const product = await fetchProductDetail(url);
+          loaded.push(product);
+        }
+
+        products = loaded;
+        renderProducts();
+        status.textContent = 'Načítané produkty: ' + products.length;
+      } catch (error) {
+        status.textContent = 'Chyba pri načítaní produktov: ' + (error.message || 'Neznáma chyba');
+        empty.style.display = 'block';
+      }
+    }
+
+    function renderProducts() {
+      const grid = document.getElementById('products-grid');
+      const empty = document.getElementById('products-empty');
+
+      grid.innerHTML = '';
+
+      if (!products.length) {
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+
+      products.forEach(product => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+
+        const imageHtml = product.image
+          ? `<div class="product-image-wrap"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"></div>`
+          : `<div class="product-image-wrap"><span style="color:#cfd6e2;font-size:14px;">Bez obrázka</span></div>`;
+
+        card.innerHTML = `
+          ${imageHtml}
+          <div class="product-body">
+            <div class="product-title">${escapeHtml(product.title)}</div>
+            <div class="product-price">${escapeHtml(priceToDisplay(product.price))}</div>
+            <div class="product-desc">${escapeHtml(getShortDescription(product))}</div>
+            <div class="action-row">
+              <button class="btn" type="button">Otvoriť detail</button>
+            </div>
+          </div>
+        `;
+
+        card.querySelector('button').addEventListener('click', () => openDetailCard(product.url));
+        grid.appendChild(card);
+      });
+    }
+
+    async function openDetailCard(productUrl) {
+      showSection('detail');
+
+      const status = document.getElementById('status-detail');
+      const wrap = document.getElementById('detail-wrap');
+      const empty = document.getElementById('detail-empty');
+
+      wrap.style.display = 'none';
+      empty.style.display = 'none';
+      status.textContent = 'Načítavam detail produktu...';
+
+      try {
+        const product = await fetchProductDetail(productUrl);
+        detailProduct = product;
+        renderDetail(product);
+        wrap.style.display = 'block';
+        status.textContent = 'Detail načítaný.';
+      } catch (error) {
+        detailProduct = null;
+        status.textContent = 'Chyba pri načítaní detailu: ' + (error.message || 'Neznáma chyba');
+        empty.style.display = 'block';
+      }
+    }
+
+    function renderDetail(product) {
+      document.getElementById('detail-title').textContent = product.title || '';
+      document.getElementById('detail-price').textContent = priceToDisplay(product.price);
+      document.getElementById('detail-description').textContent = product.description || product.shortDescription || '';
+
+      const mainImage = document.getElementById('detail-main-image');
+      if (product.image) {
+        mainImage.innerHTML = `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}">`;
+      } else {
+        mainImage.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#cfd6e2;">Bez obrázka</div>`;
+      }
+
+      const oblozenieWrap = document.getElementById('variant-oblozenie-wrap');
+      const akrylWrap = document.getElementById('variant-akryl-wrap');
+      const oblozenieSelect = document.getElementById('variant-oblozenie');
+      const akrylSelect = document.getElementById('variant-akryl');
+
+      oblozenieSelect.innerHTML = '';
+      akrylSelect.innerHTML = '';
+
+      const oblozenie = Array.isArray(product.variants?.oblozenie) ? product.variants.oblozenie : [];
+      const akryl = Array.isArray(product.variants?.akryl) ? product.variants.akryl : [];
+
+      if (oblozenie.length) {
+        oblozenieWrap.style.display = 'block';
+        oblozenieSelect.innerHTML = oblozenie.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+      } else {
+        oblozenieWrap.style.display = 'none';
+      }
+
+      if (akryl.length) {
+        akrylWrap.style.display = 'block';
+        akrylSelect.innerHTML = akryl.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+      } else {
+        akrylWrap.style.display = 'none';
+      }
+
+      document.getElementById('detail-qty').value = 1;
+    }
+
+    function getCart() {
+      try {
+        return JSON.parse(localStorage.getItem('platinum_cart') || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function saveCart(cart) {
+      localStorage.setItem('platinum_cart', JSON.stringify(cart));
+    }
+
+    function addDetailToCart() {
+      if (!detailProduct) return;
+
+      const qty = Math.max(1, parseInt(document.getElementById('detail-qty').value || '1', 10));
+      const oblozenieEl = document.getElementById('variant-oblozenie');
+      const akrylEl = document.getElementById('variant-akryl');
+
+      const item = {
+        id: detailProduct.url,
+        url: detailProduct.url,
+        title: detailProduct.title,
+        price: detailProduct.price,
+        image: detailProduct.image || '',
+        qty,
+        oblozenie: oblozenieEl && oblozenieEl.parentElement.style.display !== 'none' ? oblozenieEl.value : '',
+        akryl: akrylEl && akrylEl.parentElement.style.display !== 'none' ? akrylEl.value : ''
+      };
+
+      const cart = getCart();
+      cart.push(item);
+      saveCart(cart);
+      renderCart();
+      showToast('Pridané do košíka');
+    }
+
+    function removeCartItem(index) {
+      const cart = getCart();
+      cart.splice(index, 1);
+      saveCart(cart);
+      renderCart();
+    }
+
+    function updateCartQty(index, qty) {
+      const cart = getCart();
+      if (!cart[index]) return;
+      cart[index].qty = Math.max(1, parseInt(qty || 1, 10));
+      saveCart(cart);
+      renderCart();
+    }
+
+    function clearCart() {
+      localStorage.removeItem('platinum_cart');
+      renderCart();
+      document.getElementById('order-status').textContent = 'Košík bol vymazaný.';
+      showToast('Košík vymazaný');
+    }
+
+    function renderCart() {
+      const cart = getCart();
+      const list = document.getElementById('cart-list');
+      const totalEl = document.getElementById('cart-total');
+
+      list.innerHTML = '';
+
+      if (!cart.length) {
+        list.innerHTML = '<div class="empty-state">Košík je zatiaľ prázdny.</div>';
+        totalEl.textContent = 'Spolu: 0 €';
+        return;
+      }
+
+      let total = 0;
+
+      cart.forEach((item, index) => {
+        const price = parsePriceNumber(item.price);
+        const qty = Math.max(1, parseInt(item.qty || 1, 10));
+        total += price * qty;
+
+        const div = document.createElement('div');
+        div.className = 'cart-item';
+        div.innerHTML = `
+          <div class="cart-thumb">
+            ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}">` : ''}
+          </div>
+          <div>
+            <div class="cart-title">${escapeHtml(item.title)}</div>
+            <div class="cart-meta">
+              Cena: ${escapeHtml(priceToDisplay(item.price))}<br>
+              ${item.oblozenie ? 'Farba obloženia: ' + escapeHtml(item.oblozenie) + '<br>' : ''}
+              ${item.akryl ? 'Farba akrylu: ' + escapeHtml(item.akryl) + '<br>' : ''}
+            </div>
+            <div class="inline-row">
+              <input class="qty-input" type="number" min="1" value="${qty}" onchange="updateCartQty(${index}, this.value)">
+              <button class="btn danger" type="button" onclick="removeCartItem(${index})">Odstrániť</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+
+      totalEl.textContent = 'Spolu: ' + total.toFixed(2) + ' €';
+    }
+
+    function getFavorites() {
+      try {
+        return JSON.parse(localStorage.getItem('platinum_favorites') || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function saveFavorites(favorites) {
+      localStorage.setItem('platinum_favorites', JSON.stringify(favorites));
+    }
+
+    function saveDetailToFavorites() {
+      if (!detailProduct) return;
+
+      const oblozenieEl = document.getElementById('variant-oblozenie');
+      const akrylEl = document.getElementById('variant-akryl');
+
+      const item = {
+        id: detailProduct.url,
+        url: detailProduct.url,
+        title: detailProduct.title,
+        price: detailProduct.price,
+        image: detailProduct.image || '',
+        oblozenie: oblozenieEl && oblozenieEl.parentElement.style.display !== 'none' ? oblozenieEl.value : '',
+        akryl: akrylEl && akrylEl.parentElement.style.display !== 'none' ? akrylEl.value : ''
+      };
+
+      const favorites = getFavorites();
+      const exists = favorites.some(f =>
+        f.id === item.id &&
+        (f.oblozenie || '') === (item.oblozenie || '') &&
+        (f.akryl || '') === (item.akryl || '')
+      );
+
+      if (exists) {
+        showToast('Produkt už je v obľúbených');
+        return;
+      }
+
+      favorites.push(item);
+      saveFavorites(favorites);
+      renderFavorites();
+      showToast('Uložené do obľúbených');
+    }
+
+    function addFavoriteToCart(index) {
+      const favorites = getFavorites();
+      const item = favorites[index];
+      if (!item) return;
+
+      const cart = getCart();
+      cart.push({
+        ...item,
+        qty: 1
+      });
+      saveCart(cart);
+      renderCart();
+      showToast('Pridané do košíka');
+    }
+
+    function removeFavorite(index) {
+      const favorites = getFavorites();
+      favorites.splice(index, 1);
+      saveFavorites(favorites);
+      renderFavorites();
+    }
+
+    function clearFavorites() {
+      localStorage.removeItem('platinum_favorites');
+      renderFavorites();
+      showToast('Obľúbené vymazané');
+    }
+
+    function renderFavorites() {
+      const favorites = getFavorites();
+      const list = document.getElementById('favorites-list');
+      list.innerHTML = '';
+
+      if (!favorites.length) {
+        list.innerHTML = '<div class="empty-state">Zatiaľ nemáte uložené žiadne obľúbené produkty.</div>';
+        return;
+      }
+
+      favorites.forEach((item, index) => {
+        const safeUrl = String(item.url || '').replace(/'/g, "\\'");
+        const div = document.createElement('div');
+        div.className = 'favorite-item';
+        div.innerHTML = `
+          <div class="favorite-thumb">
+            ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}">` : ''}
+          </div>
+          <div>
+            <div class="favorite-title">${escapeHtml(item.title)}</div>
+            <div class="favorite-meta">
+              Cena: ${escapeHtml(priceToDisplay(item.price))}<br>
+              ${item.oblozenie ? 'Farba obloženia: ' + escapeHtml(item.oblozenie) + '<br>' : ''}
+              ${item.akryl ? 'Farba akrylu: ' + escapeHtml(item.akryl) + '<br>' : ''}
+            </div>
+            <div class="inline-row">
+              <button class="btn" type="button" onclick="addFavoriteToCart(${index})">Pridať do košíka</button>
+              <button class="btn secondary" type="button" onclick="openDetailCard('${safeUrl}')">Detail</button>
+              <button class="btn danger" type="button" onclick="removeFavorite(${index})">Odstrániť</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function getCustomerData() {
+      try {
+        return JSON.parse(localStorage.getItem('platinum_customer_data') || '{}');
+      } catch {
+        return {};
+      }
+    }
+
+    function saveCustomerData(data) {
+      localStorage.setItem('platinum_customer_data', JSON.stringify(data));
+    }
+
+    function fillCustomerData() {
+      const data = getCustomerData();
+      const ids = [
+        'order_name',
+        'order_email',
+        'order_phone',
+        'order_street',
+        'order_house_number',
+        'order_zip',
+        'order_city'
+      ];
+
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && data[id]) el.value = data[id];
+      });
+    }
+
+    function clearCustomerData() {
+      localStorage.removeItem('platinum_customer_data');
+      ['order_name','order_email','order_phone','order_street','order_house_number','order_zip','order_city','order_note']
+        .forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+      showToast('Údaje zákazníka vymazané');
+    }
+
+    document.getElementById('orderForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const cart = getCart();
+      const status = document.getElementById('order-status');
+
+      if (!cart.length) {
+        status.textContent = 'Košík je prázdny.';
+        return;
+      }
+
+      const meno = document.getElementById('order_name').value.trim();
+      const email = document.getElementById('order_email').value.trim();
+      const phone = document.getElementById('order_phone').value.trim();
+      const street = document.getElementById('order_street').value.trim();
+      const houseNumber = document.getElementById('order_house_number').value.trim();
+      const zip = document.getElementById('order_zip').value.trim();
+      const city = document.getElementById('order_city').value.trim();
+      const note = document.getElementById('order_note').value.trim();
+
+      if (!meno || !email || !phone || !street || !houseNumber || !zip || !city) {
+        status.textContent = 'Vyplň všetky povinné údaje.';
+        return;
+      }
+
+      const phoneClean = phone.replace(/\s+/g, '');
+      if (!/^09\d{8}$/.test(phoneClean)) {
+        status.textContent = 'Telefónne číslo musí mať 10 číslic a začínať na 09.';
+        return;
+      }
+
+      const zipClean = zip.replace(/\s+/g, '');
+      if (!/^\d{5}$/.test(zipClean)) {
+        status.textContent = 'PSČ musí mať 5 číslic.';
+        return;
+      }
+
+      saveCustomerData({
+        order_name: meno,
+        order_email: email,
+        order_phone: phoneClean,
+        order_street: street,
+        order_house_number: houseNumber,
+        order_zip: zipClean,
+        order_city: city
+      });
+
+      status.textContent = 'Odosielam objednávku...';
+
+      try {
+        const response = await fetch(API_BASE + '/order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            meno,
+            email,
+            phone: phoneClean,
+            street,
+            houseNumber,
+            zip: zipClean,
+            city,
+            note,
+            items: cart
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          status.textContent = 'Objednávka bola úspešne odoslaná.';
+          localStorage.removeItem('platinum_cart');
+          renderCart();
+          document.getElementById('order_note').value = '';
+          showToast('Objednávka odoslaná');
+        } else {
+          status.textContent = 'Chyba: ' + (data.detail || data.error || 'Odoslanie objednávky zlyhalo.');
+        }
+      } catch (error) {
+        status.textContent = 'Chyba spojenia so serverom.';
+      }
+    });
+
+    loadProducts();
+    renderCart();
+    renderFavorites();
+    fillCustomerData();
+  </script>
+</body>
+</html>
