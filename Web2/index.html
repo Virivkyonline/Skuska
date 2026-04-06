@@ -1,1 +1,361 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Platinum Lech Spa</title>
 
+  <style>
+    :root {
+      --bg-color: #0B1320;
+      --title-panel: #132844;
+      --center-panel: #1E3A5F;
+      --title-text: #FFFFFF;
+      --center-text: #F3F4F6;
+      --accent-text: #D4AF37;
+      --button-text: #0B1320;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--title-text);
+    }
+
+    body {
+      background-color: var(--bg-color);
+      /* Ak chces pozadie obrazkom, odkomentuj tieto riadky */
+      /* background-image: url('bublinky.png'); */
+      /* background-size: cover; */
+      /* background-position: center; */
+      /* background-repeat: no-repeat; */
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title-panel {
+      width: 100%;
+      background: var(--title-panel);
+      text-align: center;
+      padding: 34px 16px 24px 16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    }
+
+    .title-panel h1 {
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: var(--title-text);
+      margin-bottom: 10px;
+    }
+
+    .title-panel p {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent-text);
+    }
+
+    .nav-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 18px 16px 0 16px;
+      max-width: 760px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .nav-buttons button,
+    .form-buttons button,
+    .cart-buttons button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--accent-text);
+      color: var(--button-text);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+
+    .content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 14px;
+    }
+
+    .center-panel {
+      width: 100%;
+      max-width: 760px;
+      background: var(--center-panel);
+      border-radius: 24px;
+      padding: 26px 18px;
+      text-align: center;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.35);
+    }
+
+    .center-panel h2 {
+      font-size: 24px;
+      margin-bottom: 18px;
+      color: var(--title-text);
+    }
+
+    .center-panel p {
+      font-size: 17px;
+      line-height: 1.7;
+      color: var(--center-text);
+      margin-bottom: 16px;
+    }
+
+    .gold {
+      color: var(--accent-text);
+      font-weight: 700;
+    }
+
+    input, textarea {
+      width: 100%;
+      margin-bottom: 14px;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+
+    .form-buttons,
+    .cart-buttons {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #form-status {
+      margin-top: 14px;
+      font-size: 15px;
+      color: #FFFFFF;
+    }
+
+    .logo-bottom {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      min-height: 120px;
+      padding: 8px 16px 24px 16px;
+    }
+
+    .logo-bottom img {
+      max-width: 240px;
+      width: 60%;
+      height: auto;
+      display: block;
+    }
+
+    #home-page,
+    #contact-page,
+    #cart-page {
+      width: 100%;
+    }
+
+    #contact-page,
+    #cart-page {
+      display: none;
+    }
+
+    @media (min-width: 700px) {
+      .title-panel {
+        padding: 42px 20px 30px 20px;
+      }
+
+      .title-panel h1 {
+        font-size: 48px;
+      }
+
+      .title-panel p {
+        font-size: 20px;
+      }
+
+      .nav-buttons {
+        flex-direction: row;
+      }
+
+      .nav-buttons button {
+        flex: 1;
+      }
+
+      .center-panel {
+        padding: 36px 30px;
+      }
+
+      .center-panel h2 {
+        font-size: 32px;
+      }
+
+      .center-panel p {
+        font-size: 20px;
+      }
+
+      .logo-bottom {
+        min-height: 170px;
+      }
+
+      .logo-bottom img {
+        max-width: 320px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="title-panel">
+      <h1>PLATINUM LECH SPA</h1>
+      <p>KVALITNÉ VÍRIVKY NA PREDAJ</p>
+    </div>
+
+    <div class="nav-buttons">
+      <button onclick="showPage('home-page')">Hlavná stránka</button>
+      <button onclick="showPage('cart-page')">Košík</button>
+      <button onclick="showPage('contact-page')">Kontaktný formulár</button>
+    </div>
+
+    <div class="content">
+
+      <div id="home-page">
+        <div class="center-panel">
+          <h2>Prečo si vybrať nás</h2>
+
+          <p>
+            Objavte svet domáceho relaxu, kde sa pohodlie spája s moderným dizajnom,
+            spoľahlivosťou a dlhoročnými skúsenosťami.
+          </p>
+
+          <p>
+            Naše vírivky predávame pod vlastnou značkou
+            <span class="gold">Platinum Lech Spa</span>
+            s dôrazom na kvalitu, dlhú životnosť, spokojnosť zákazníkov
+            a profesionálny servis.
+          </p>
+
+          <p>
+            Volám sa <span class="gold">Stanislav Lech</span> a vírivkám sa venujem viac ako 15 rokov.
+            V podnikaní pôsobím viac ako 27 rokov, preto viem, že pri kúpe vírivky je dôležitý
+            nielen produkt, ale aj firma, na ktorú sa môžete spoľahnúť aj v budúcnosti.
+          </p>
+
+          <p>
+            U nás získate viac než len vírivku. Získate istotu, odborné poradenstvo,
+            záručný aj pozáručný servis a partnera pre váš vlastný wellness.
+          </p>
+        </div>
+      </div>
+
+      <div id="contact-page">
+        <div class="center-panel">
+          <h2>Kontaktný formulár</h2>
+
+          <form id="contactForm">
+            <input type="text" id="meno" placeholder="Meno a priezvisko" required />
+            <input type="email" id="email" placeholder="Váš email" required />
+            <textarea id="sprava" placeholder="Vaša správa" required></textarea>
+
+            <div class="form-buttons">
+              <button type="submit">Odoslať formulár</button>
+              <button type="button" onclick="showPage('home-page')">Hlavná stránka</button>
+            </div>
+          </form>
+
+          <p id="form-status"></p>
+        </div>
+      </div>
+
+      <div id="cart-page">
+        <div class="center-panel">
+          <h2>Nákupný košík</h2>
+
+          <p>
+            Táto sekcia je zatiaľ pripravená ako jednoduchý košík.
+          </p>
+
+          <p>
+            Neskôr sem môžeme doplniť produkty, ceny, počet kusov,
+            výpočet sumy a objednávkový formulár.
+          </p>
+
+          <div class="cart-buttons">
+            <button type="button" onclick="showPage('home-page')">Hlavná stránka</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="logo-bottom">
+      <img src="logo-gold.png" alt="Logo Platinum Lech Spa">
+    </div>
+
+  </div>
+
+  <script>
+    function showPage(pageId) {
+      document.getElementById('home-page').style.display = 'none';
+      document.getElementById('contact-page').style.display = 'none';
+      document.getElementById('cart-page').style.display = 'none';
+      document.getElementById(pageId).style.display = 'block';
+    }
+
+    document.getElementById('contactForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const meno = document.getElementById('meno').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const sprava = document.getElementById('sprava').value.trim();
+      const status = document.getElementById('form-status');
+
+      status.textContent = 'Odosielam formulár...';
+
+      try {
+        const response = await fetch('https://virivkyapp.lechstav.workers.dev', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ meno, email, sprava })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          status.textContent = 'Formulár bol úspešne odoslaný.';
+          document.getElementById('contactForm').reset();
+        } else {
+          status.textContent = 'Chyba: ' + (data.error || 'Odoslanie zlyhalo.');
+        }
+      } catch (error) {
+        status.textContent = 'Chyba spojenia so serverom.';
+      }
+    });
+  </script>
+</body>
+</html>
