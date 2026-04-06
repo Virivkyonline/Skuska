@@ -1,13 +1,49 @@
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type"
     };
 
     if (request.method === "OPTIONS") {
       return new Response("", { headers: corsHeaders });
+    }
+
+    if (request.method === "GET" && url.pathname === "/feed") {
+      try {
+        const target = url.searchParams.get("url");
+        if (!target) {
+          return new Response("Missing url parameter", {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        const feedResponse = await fetch(target, {
+          method: "GET",
+          headers: {
+            "User-Agent": "Mozilla/5.0 PlatinumLechSpaApp/1.0"
+          }
+        });
+
+        const text = await feedResponse.text();
+
+        return new Response(text, {
+          status: feedResponse.ok ? 200 : feedResponse.status,
+          headers: {
+            "Content-Type": "application/xml; charset=utf-8",
+            ...corsHeaders
+          }
+        });
+      } catch (e) {
+        return new Response("Feed proxy error", {
+          status: 500,
+          headers: corsHeaders
+        });
+      }
     }
 
     if (request.method !== "POST") {
