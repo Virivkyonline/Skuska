@@ -158,6 +158,15 @@ async function handleOrder(request, env, corsHeaders) {
       );
     }
 
+    const phoneClean = phone.replace(/\s+/g, "");
+    if (!/^09\d{8}$/.test(phoneClean)) {
+      return jsonResponse(
+        { success: false, error: "Telefonne cislo musi mat 10 cislic a zacinat na 09." },
+        400,
+        corsHeaders
+      );
+    }
+
     const zipClean = zip.replace(/\s+/g, "");
     if (!/^\d{5}$/.test(zipClean)) {
       return jsonResponse(
@@ -205,7 +214,7 @@ async function handleOrder(request, env, corsHeaders) {
       "<h2>Nova objednavka z aplikacie</h2>" +
       "<p><strong>Meno:</strong> " + escapeHtml(meno) + "</p>" +
       "<p><strong>Email:</strong> " + escapeHtml(email) + "</p>" +
-      "<p><strong>Telefon:</strong> " + escapeHtml(phone) + "</p>" +
+      "<p><strong>Telefon:</strong> " + escapeHtml(phoneClean) + "</p>" +
       "<p><strong>Adresa dorucenia:</strong><br>" + addressHtml + "</p>" +
       "<p><strong>Poznamka:</strong><br>" + escapeHtml(note || "-").replace(/\n/g, "<br>") + "</p>" +
       "<h3>Produkty</h3>" +
@@ -229,7 +238,7 @@ async function handleOrder(request, env, corsHeaders) {
       "<h2>Potvrdenie objednavky</h2>" +
       "<p>Dakujeme za vasu objednavku. Kopia objednavky je nizsie.</p>" +
       "<p><strong>Meno:</strong> " + escapeHtml(meno) + "</p>" +
-      "<p><strong>Telefon:</strong> " + escapeHtml(phone) + "</p>" +
+      "<p><strong>Telefon:</strong> " + escapeHtml(phoneClean) + "</p>" +
       "<p><strong>Adresa dorucenia:</strong><br>" + addressHtml + "</p>" +
       "<p><strong>Poznamka:</strong><br>" + escapeHtml(note || "-").replace(/\n/g, "<br>") + "</p>" +
       "<h3>Produkty</h3>" +
@@ -345,4 +354,4 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-}
+      }
