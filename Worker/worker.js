@@ -57,7 +57,7 @@ export default {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          from: "formular@send.virivkyonline.sk",
+          from: "formular@send.e-bazarik.sk",
           to: "info@virivkyonline.sk",
           reply_to: email,
           subject: "Novy kontaktny formular od: " + meno,
