@@ -28,15 +28,10 @@ export default {
       return handleContactForm(request, env, corsHeaders);
     }
 
-    return new Response(
-      JSON.stringify({ success: false, error: "Pouzi GET alebo POST." }),
-      {
-        status: 405,
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders
-        }
-      }
+    return jsonResponse(
+      { success: false, error: "Pouzi GET alebo POST." },
+      405,
+      corsHeaders
     );
   }
 };
@@ -52,14 +47,12 @@ async function handleFeedProxy(url, corsHeaders) {
       });
     }
 
-    const targetUrl = new URL(target);
+    const normalizedUrl = normalizeProductUrl(target);
 
-    const feedResponse = await fetch(targetUrl.toString(), {
+    const feedResponse = await fetch(normalizedUrl, {
       method: "GET",
-      headers: {
-        "User-Agent": "Mozilla/5.0 PlatinumLechSpaApp/1.0",
-        "Accept-Language": "sk-SK,sk;q=0.9,en;q=0.8"
-      }
+      redirect: "follow",
+      headers: browserHeaders(normalizedUrl)
     });
 
     const text = await feedResponse.text();
@@ -91,54 +84,52 @@ async function handleProductDetail(url, corsHeaders) {
       );
     }
 
-    let targetUrl;
-    try {
-      targetUrl = new URL(target);
-    } catch {
-      return jsonResponse(
-        { success: false, error: "Neplatna URL adresa produktu." },
-        400,
-        corsHeaders
-      );
+    const normalizedUrl = normalizeProductUrl(target);
+    const variantsToTry = buildUrlVariants(normalizedUrl);
+
+    let lastStatus = 0;
+    let lastText = "";
+    let lastUrlUsed = normalizedUrl;
+
+    for (const tryUrl of variantsToTry) {
+      try {
+        const response = await fetch(tryUrl, {
+          method: "GET",
+          redirect: "follow",
+          headers: browserHeaders(tryUrl)
+        });
+
+        const text = await response.text();
+        lastStatus = response.status;
+        lastText = text;
+        lastUrlUsed = tryUrl;
+
+        if (looksLikeUsefulHtml(text)) {
+          const data = parseProductHtml(text, tryUrl);
+
+          if (data.title || data.description || data.image) {
+            return jsonResponse(
+              {
+                success: true,
+                product: data
+              },
+              200,
+              corsHeaders
+            );
+          }
+        }
+      } catch (err) {}
     }
-
-    if (!/virivkyonline\.sk$/i.test(targetUrl.hostname)) {
-      return jsonResponse(
-        { success: false, error: "Povolena je iba domena virivkyonline.sk." },
-        400,
-        corsHeaders
-      );
-    }
-
-    const productResponse = await fetch(targetUrl.toString(), {
-      method: "GET",
-      headers: {
-        "User-Agent": "Mozilla/5.0 PlatinumLechSpaApp/1.0",
-        "Accept-Language": "sk-SK,sk;q=0.9,en;q=0.8"
-      }
-    });
-
-    if (!productResponse.ok) {
-      return jsonResponse(
-        {
-          success: false,
-          error: "Nepodarilo sa nacitat stranku produktu.",
-          detail: "HTTP " + productResponse.status
-        },
-        productResponse.status,
-        corsHeaders
-      );
-    }
-
-    const html = await productResponse.text();
-    const data = parseProductHtml(html, targetUrl.toString());
 
     return jsonResponse(
       {
-        success: true,
-        product: data
+        success: false,
+        error: "Nepodarilo sa nacitat stranku produktu.",
+        detail: "HTTP " + (lastStatus || 0),
+        debugUrl: lastUrlUsed,
+        debugSnippet: stripTags(lastText || "").slice(0, 300)
       },
-      200,
+      500,
       corsHeaders
     );
   } catch (e) {
@@ -151,6 +142,68 @@ async function handleProductDetail(url, corsHeaders) {
       corsHeaders
     );
   }
+}
+
+function normalizeProductUrl(target) {
+  let parsed;
+  try {
+    parsed = new URL(target);
+  } catch {
+    throw new Error("Neplatna URL");
+  }
+
+  if (!/virivkyonline\.sk$/i.test(parsed.hostname)) {
+    throw new Error("Povolena je iba domena virivkyonline.sk");
+  }
+
+  parsed.protocol = "https:";
+  parsed.hostname = "www.virivkyonline.sk";
+
+  if (!parsed.pathname.endsWith("/")) {
+    parsed.pathname += "/";
+  }
+
+  return parsed.toString();
+}
+
+function buildUrlVariants(url) {
+  const u = new URL(url);
+  const variants = new Set();
+
+  variants.add(u.toString());
+
+  const noSlash = new URL(u.toString());
+  noSlash.pathname = noSlash.pathname.replace(/\/+$/, "");
+  variants.add(noSlash.toString());
+
+  const withSlash = new URL(noSlash.toString());
+  withSlash.pathname = withSlash.pathname + "/";
+  variants.add(withSlash.toString());
+
+  return [...variants];
+}
+
+function browserHeaders(url) {
+  return {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "sk-SK,sk;q=0.9,en;q=0.8",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+    "Referer": url,
+    "Upgrade-Insecure-Requests": "1"
+  };
+}
+
+function looksLikeUsefulHtml(text) {
+  const t = String(text || "").toLowerCase();
+  return (
+    t.includes("<html") ||
+    t.includes("<h1") ||
+    t.includes("og:title") ||
+    t.includes("description") ||
+    t.includes("product")
+  );
 }
 
 function parseProductHtml(html, productUrl) {
@@ -186,7 +239,7 @@ function parseProductHtml(html, productUrl) {
     title,
     price,
     image: mainImage,
-    gallery,
+    gallery: mainImage ? [mainImage] : [],
     shortDescription,
     description,
     variants
@@ -244,47 +297,21 @@ function absolutizeUrl(url, base) {
 function extractGalleryImages(html, baseUrl) {
   const results = [];
 
-  const galleryBlockRegexes = [
-    /<div[^>]*class=["'][^"']*p-detail-inner[^"']*["'][\s\S]*?<\/div>\s*<\/div>/i,
-    /<div[^>]*class=["'][^"']*p-image-wrapper[^"']*["'][\s\S]*?<\/div>/i,
-    /<div[^>]*class=["'][^"']*p-thumbnails-wrapper[^"']*["'][\s\S]*?<\/div>/i,
-    /<div[^>]*class=["'][^"']*p-image-thumbnails[^"']*["'][\s\S]*?<\/div>/i,
-    /<div[^>]*class=["'][^"']*slick-track[^"']*["'][\s\S]*?<\/div>/i
-  ];
-
-  let galleryHtml = "";
-  for (const regex of galleryBlockRegexes) {
-    const m = html.match(regex);
-    if (m && m[0]) {
-      galleryHtml += " " + m[0];
-    }
+  const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
+  if (ogImage) {
+    const fullOg = absolutizeUrl(ogImage, baseUrl);
+    if (fullOg) results.push(fullOg);
   }
 
-  if (!galleryHtml) {
-    const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
-    if (ogImage) {
-      const full = absolutizeUrl(ogImage, baseUrl);
-      return full ? [full] : [];
-    }
-    return [];
-  }
+  const imageRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+  let match;
 
-  const imgRegex = /<(img|a)[^>]+(?:src|href|data-src|data-gallery-src)=["']([^"']+)["'][^>]*>/gi;
-  let m;
-
-  while ((m = imgRegex.exec(galleryHtml)) !== null) {
-    const raw = m[2] || "";
-    if (!raw) continue;
-
+  while ((match = imageRegex.exec(html)) !== null) {
+    const raw = match[1] || "";
     const full = absolutizeUrl(raw, baseUrl);
     if (!full) continue;
 
     const lower = full.toLowerCase();
-
-    if (
-      !lower.includes("cdn.myshoptet.com") &&
-      !lower.includes("myshoptet.com")
-    ) continue;
 
     if (
       !lower.includes(".jpg") &&
@@ -294,50 +321,29 @@ function extractGalleryImages(html, baseUrl) {
     ) continue;
 
     if (
-      lower.includes("favicon") ||
       lower.includes("logo") ||
       lower.includes("icon") ||
+      lower.includes("favicon") ||
       lower.includes("placeholder") ||
       lower.includes("gift") ||
       lower.includes("house") ||
-      lower.includes("home") ||
-      lower.includes("badge") ||
-      lower.includes("cert") ||
+      lower.includes("home-icon") ||
       lower.includes("filter") ||
       lower.includes("spa-line") ||
       lower.includes("chemia") ||
       lower.includes("tablety")
     ) continue;
 
-    results.push(full);
-  }
-
-  const unique = [...new Set(results)];
-
-  if (!unique.length) {
-    const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
-    if (ogImage) {
-      const full = absolutizeUrl(ogImage, baseUrl);
-      return full ? [full] : [];
+    if (
+      lower.includes("virivka") ||
+      lower.includes("myshoptet") ||
+      lower.includes("cdn.myshoptet.com")
+    ) {
+      results.push(full);
     }
   }
 
-  return unique;
-}
-
-function pickBestImage(html, baseUrl, title) {
-  const gallery = extractGalleryImages(html, baseUrl);
-  if (gallery.length) {
-    return gallery[0];
-  }
-
-  const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
-  if (ogImage) {
-    const full = absolutizeUrl(ogImage, baseUrl);
-    if (full) return full;
-  }
-
-  return "";
+  return [...new Set(results)].slice(0, 1);
 }
 
 function findPriceInHtml(html) {
@@ -402,77 +408,147 @@ function buildShortDescription(description, fallback) {
 }
 
 function extractVariants(html) {
-  const text = stripTags(html);
+  const selects = extractGenericSelectVariants(html);
 
-  const oblozenie = extractVariantBlock(
-    html,
-    text,
-    [
-      "FARBA OBLOŽENIA A SCHODÍKOV",
-      "FARBA OBLOZENIA A SCHODIKOV",
-      "FARBA OBLOŽENIA",
-      "FARBA OBLOZENIA",
-      "OBLOŽENIE",
-      "OBLOZENIE"
-    ]
-  );
+  const oblozenie = findVariantValuesByName(selects, [
+    "farba obloženia a schodíkov",
+    "farba oblozenia a schodikov",
+    "farba obloženia",
+    "farba oblozenia",
+    "obloženie",
+    "oblozenie"
+  ]);
 
-  const akryl = extractVariantBlock(
-    html,
-    text,
-    [
-      "FARBA AKRYLU NA VÝBER",
-      "FARBA AKRYLU NA VYBER",
-      "FARBA AKRYLU",
-      "AKRYL"
-    ]
-  );
+  const akryl = findVariantValuesByName(selects, [
+    "farba akrylu na výber",
+    "farba akrylu na vyber",
+    "farba akrylu",
+    "akryl"
+  ]);
 
   return {
     oblozenie,
-    akryl
+    akryl,
+    generic: selects
   };
 }
 
-function extractVariantBlock(html, plainText, labels) {
-  for (const label of labels) {
-    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function extractGenericSelectVariants(html) {
+  const results = [];
+  const selectRegex = /<select([^>]*)>([\s\S]*?)<\/select>/gi;
+  let match;
 
-    const selectRegex = new RegExp(
-      escaped + "[\\s\\S]{0,250}?<select[\\s\\S]*?<\\/select>",
-      "i"
-    );
-    const selectMatch = html.match(selectRegex);
+  while ((match = selectRegex.exec(html)) !== null) {
+    const selectAttrs = match[1] || "";
+    const selectHtml = match[0] || "";
+    const values = extractOptionsFromSelect(selectHtml);
+    if (!values.length) continue;
 
-    if (selectMatch) {
-      const optionValues = extractOptionsFromSelect(selectMatch[0]);
-      if (optionValues.length) return optionValues;
-    }
+    const name =
+      extractSelectLabel(html, match.index) ||
+      extractAttr(selectAttrs, "name") ||
+      extractAttr(selectAttrs, "id") ||
+      "Variant";
 
-    const textRegex = new RegExp(
-      escaped + "\\s+Zvoľte variant\\s+([\\s\\S]*?)(?:\\n\\s*[A-ZÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ][^\\n]*Zvoľte variant|\\n\\s*Kód:|\\n\\s*Cena:|\\n\\s*€|$)",
-      "i"
-    );
-    const textMatch = plainText.match(textRegex);
+    results.push({
+      name: cleanVariantName(name),
+      values: [...new Set(values)]
+    });
+  }
 
-    if (textMatch && textMatch[1]) {
-      const values = textMatch[1]
-        .replace(/\s+/g, " ")
-        .trim()
-        .split(" ")
-        .map(x => x.trim())
-        .filter(Boolean)
-        .filter(x => !/^zvoľte$/i.test(x))
-        .filter(x => !/^zvolte$/i.test(x))
-        .filter(x => !/^variant$/i.test(x))
-        .filter(x => !/^reset$/i.test(x))
-        .filter(x => !/^vybraných$/i.test(x))
-        .filter(x => !/^parametrov\.?$/i.test(x));
+  return dedupeVariantGroups(results);
+}
 
-      if (values.length) return [...new Set(values)];
+function extractSelectLabel(html, selectIndex) {
+  const before = html.slice(Math.max(0, selectIndex - 1500), selectIndex);
+
+  const labelMatches = [...before.matchAll(/<label[^>]*>([\s\S]*?)<\/label>/gi)];
+  if (labelMatches.length) {
+    const last = labelMatches[labelMatches.length - 1];
+    const text = stripTags(last[1] || "").trim();
+    if (text) return text;
+  }
+
+  const strongMatches = [...before.matchAll(/<(strong|b|span|div)[^>]*>([\s\S]*?)<\/\1>/gi)];
+  for (let i = strongMatches.length - 1; i >= 0; i--) {
+    const text = stripTags(strongMatches[i][2] || "").trim();
+    if (
+      text &&
+      text.length < 80 &&
+      !/do košíka/i.test(text) &&
+      !/do kosika/i.test(text) &&
+      !/kód/i.test(text) &&
+      !/kod/i.test(text) &&
+      !/cena/i.test(text)
+    ) {
+      return text;
     }
   }
 
+  const plain = stripTags(before)
+    .split("\n")
+    .map(x => x.trim())
+    .filter(Boolean);
+
+  for (let i = plain.length - 1; i >= 0; i--) {
+    const text = plain[i];
+    if (
+      text &&
+      text.length < 80 &&
+      !/zvoľte variant/i.test(text) &&
+      !/zvolte variant/i.test(text) &&
+      !/do košíka/i.test(text) &&
+      !/do kosika/i.test(text) &&
+      !/kód/i.test(text) &&
+      !/kod/i.test(text) &&
+      !/cena/i.test(text)
+    ) {
+      return text;
+    }
+  }
+
+  return "";
+}
+
+function extractAttr(attrs, attrName) {
+  const regex = new RegExp(attrName + '=["\\']([^"\\']+)["\\']', "i");
+  const m = attrs.match(regex);
+  return m && m[1] ? m[1].trim() : "";
+}
+
+function cleanVariantName(name) {
+  return String(name || "")
+    .replace(/\s+/g, " ")
+    .replace(/:+$/, "")
+    .trim();
+}
+
+function dedupeVariantGroups(groups) {
+  const map = new Map();
+
+  for (const group of groups) {
+    const key = (group.name || "Variant").toLowerCase().trim();
+    if (!map.has(key)) {
+      map.set(key, {
+        name: group.name || "Variant",
+        values: [...group.values]
+      });
+    } else {
+      const existing = map.get(key);
+      existing.values = [...new Set([...existing.values, ...group.values])];
+    }
+  }
+
+  return [...map.values];
+}
+
+function findVariantValuesByName(groups, names) {
+  for (const group of groups) {
+    const gname = (group.name || "").toLowerCase();
+    if (names.some(name => gname.includes(name))) {
+      return group.values || [];
+    }
+  }
   return [];
 }
 
@@ -491,6 +567,8 @@ function extractOptionsFromSelect(selectHtml) {
     if (/zvolte/i.test(finalValue)) continue;
     if (/vyberte/i.test(finalValue)) continue;
     if (/reset/i.test(finalValue)) continue;
+    if (/vybraných parametrov/i.test(finalValue)) continue;
+    if (/vybranych parametrov/i.test(finalValue)) continue;
 
     options.push(finalValue);
   }
@@ -612,6 +690,7 @@ async function handleOrder(request, env, corsHeaders) {
       const qty = Math.max(1, parseInt(item.qty || 1, 10));
       const oblozenie = (item.oblozenie || "").trim();
       const akryl = (item.akryl || "").trim();
+      const variantText = (item.variantText || "").trim();
 
       const numericPrice = parsePriceNumber(priceText);
       const rowTotal = numericPrice * qty;
@@ -625,6 +704,7 @@ async function handleOrder(request, env, corsHeaders) {
           "<td style='padding:8px;border:1px solid #ddd;'>" + qty + "</td>" +
           "<td style='padding:8px;border:1px solid #ddd;'>" + escapeHtml(oblozenie || "-") + "</td>" +
           "<td style='padding:8px;border:1px solid #ddd;'>" + escapeHtml(akryl || "-") + "</td>" +
+          "<td style='padding:8px;border:1px solid #ddd;'>" + escapeHtml(variantText || "-") + "</td>" +
           "<td style='padding:8px;border:1px solid #ddd;'>" + (numericPrice ? rowTotal.toFixed(2) + " €" : "-") + "</td>" +
         "</tr>";
 
@@ -653,6 +733,7 @@ async function handleOrder(request, env, corsHeaders) {
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Pocet</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba oblozenia</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba akrylu</th>" +
+            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Dalsi variant</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Medzisucet</th>" +
           "</tr>" +
         "</thead>" +
@@ -677,6 +758,7 @@ async function handleOrder(request, env, corsHeaders) {
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Pocet</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba oblozenia</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba akrylu</th>" +
+            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Dalsi variant</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Medzisucet</th>" +
           "</tr>" +
         "</thead>" +
@@ -780,4 +862,4 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-                                       }
+}
