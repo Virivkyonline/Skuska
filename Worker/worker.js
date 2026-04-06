@@ -143,13 +143,25 @@ async function handleOrder(request, env, corsHeaders) {
     const meno = (data.meno || "").trim();
     const email = (data.email || "").trim();
     const phone = (data.phone || "").trim();
-    const address = (data.address || "").trim();
+    const street = (data.street || "").trim();
+    const houseNumber = (data.houseNumber || "").trim();
+    const zip = (data.zip || "").trim();
+    const city = (data.city || "").trim();
     const note = (data.note || "").trim();
     const items = Array.isArray(data.items) ? data.items : [];
 
-    if (!meno || !email || items.length === 0) {
+    if (!meno || !email || !phone || !street || !houseNumber || !zip || !city || items.length === 0) {
       return jsonResponse(
-        { success: false, error: "Vypln meno, email a pridaj produkty do kosika." },
+        { success: false, error: "Vypln vsetky povinne udaje a pridaj produkty do kosika." },
+        400,
+        corsHeaders
+      );
+    }
+
+    const zipClean = zip.replace(/\s+/g, "");
+    if (!/^\d{5}$/.test(zipClean)) {
+      return jsonResponse(
+        { success: false, error: "PSC musi mat 5 cislic." },
         400,
         corsHeaders
       );
@@ -157,6 +169,7 @@ async function handleOrder(request, env, corsHeaders) {
 
     let total = 0;
     let itemsHtml = "";
+    let itemsCustomerHtml = "";
 
     items.forEach((item, index) => {
       const title = (item.title || "Produkt").trim();
@@ -169,7 +182,7 @@ async function handleOrder(request, env, corsHeaders) {
       const rowTotal = numericPrice * qty;
       total += rowTotal;
 
-      itemsHtml +=
+      const row =
         "<tr>" +
           "<td style='padding:8px;border:1px solid #ddd;'>" + (index + 1) + "</td>" +
           "<td style='padding:8px;border:1px solid #ddd;'>" + escapeHtml(title) + "</td>" +
@@ -179,14 +192,21 @@ async function handleOrder(request, env, corsHeaders) {
           "<td style='padding:8px;border:1px solid #ddd;'>" + escapeHtml(akryl || "-") + "</td>" +
           "<td style='padding:8px;border:1px solid #ddd;'>" + (numericPrice ? rowTotal.toFixed(2) + " €" : "-") + "</td>" +
         "</tr>";
+
+      itemsHtml += row;
+      itemsCustomerHtml += row;
     });
 
-    const html =
+    const addressHtml =
+      escapeHtml(street) + " " + escapeHtml(houseNumber) + "<br>" +
+      escapeHtml(zipClean) + " " + escapeHtml(city);
+
+    const adminHtml =
       "<h2>Nova objednavka z aplikacie</h2>" +
       "<p><strong>Meno:</strong> " + escapeHtml(meno) + "</p>" +
       "<p><strong>Email:</strong> " + escapeHtml(email) + "</p>" +
-      "<p><strong>Telefon:</strong> " + escapeHtml(phone || "-") + "</p>" +
-      "<p><strong>Adresa:</strong> " + escapeHtml(address || "-") + "</p>" +
+      "<p><strong>Telefon:</strong> " + escapeHtml(phone) + "</p>" +
+      "<p><strong>Adresa dorucenia:</strong><br>" + addressHtml + "</p>" +
       "<p><strong>Poznamka:</strong><br>" + escapeHtml(note || "-").replace(/\n/g, "<br>") + "</p>" +
       "<h3>Produkty</h3>" +
       "<table style='border-collapse:collapse;width:100%;font-family:Arial,sans-serif;'>" +
@@ -195,30 +215,74 @@ async function handleOrder(request, env, corsHeaders) {
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>#</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Produkt</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Cena</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Počet</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba obloženia</th>" +
+            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Pocet</th>" +
+            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba oblozenia</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba akrylu</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Medzisúčet</th>" +
+            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Medzisucet</th>" +
           "</tr>" +
         "</thead>" +
         "<tbody>" + itemsHtml + "</tbody>" +
       "</table>" +
       "<p style='margin-top:16px;'><strong>Celkom:</strong> " + total.toFixed(2) + " €</p>";
 
-    const resendResponse = await sendEmail(env, {
+    const customerHtml =
+      "<h2>Potvrdenie objednavky</h2>" +
+      "<p>Dakujeme za vasu objednavku. Kopia objednavky je nizsie.</p>" +
+      "<p><strong>Meno:</strong> " + escapeHtml(meno) + "</p>" +
+      "<p><strong>Telefon:</strong> " + escapeHtml(phone) + "</p>" +
+      "<p><strong>Adresa dorucenia:</strong><br>" + addressHtml + "</p>" +
+      "<p><strong>Poznamka:</strong><br>" + escapeHtml(note || "-").replace(/\n/g, "<br>") + "</p>" +
+      "<h3>Produkty</h3>" +
+      "<table style='border-collapse:collapse;width:100%;font-family:Arial,sans-serif;'>" +
+        "<thead>" +
+          "<tr>" +
+            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>#</th>" +
+            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Produkt</th>" +
+            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Cena</th>" +
+            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Pocet</th>" +
+            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba oblozenia</th>" +
+            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba akrylu</th>" +
+            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Medzisucet</th>" +
+          "</tr>" +
+        "</thead>" +
+        "<tbody>" + itemsCustomerHtml + "</tbody>" +
+      "</table>" +
+      "<p style='margin-top:16px;'><strong>Celkom:</strong> " + total.toFixed(2) + " €</p>";
+
+    const adminResponse = await sendEmail(env, {
       from: "formular@send.e-bazarik.sk",
       to: "info@virivkyonline.sk",
       reply_to: email,
       subject: "Nova objednavka od: " + meno,
-      html
+      html: adminHtml
     });
 
-    if (!resendResponse.ok) {
-      const resendText = await resendResponse.text();
+    if (!adminResponse.ok) {
+      const resendText = await adminResponse.text();
       return jsonResponse(
         {
           success: false,
           error: "Nepodarilo sa odoslat objednavku.",
+          detail: resendText
+        },
+        500,
+        corsHeaders
+      );
+    }
+
+    const customerResponse = await sendEmail(env, {
+      from: "formular@send.e-bazarik.sk",
+      to: email,
+      subject: "Potvrdenie objednavky - Platinum Lech Spa",
+      html: customerHtml
+    });
+
+    if (!customerResponse.ok) {
+      const resendText = await customerResponse.text();
+      return jsonResponse(
+        {
+          success: false,
+          error: "Objednavka prisla nam, ale kopia zakaznikovi sa nepodarila odoslat.",
           detail: resendText
         },
         500,
