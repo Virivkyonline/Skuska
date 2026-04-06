@@ -16,6 +16,7 @@
       --card-border: rgba(255,255,255,0.08);
       --panel-bg: linear-gradient(180deg, #274a77 0%, #1f3d63 100%);
       --dark-card: rgba(10, 20, 36, 0.45);
+      --success-green: #1f9d55;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -75,8 +76,9 @@
     .form-buttons button,
     .cart-buttons button,
     .product-button,
+    .qty-input,
     .variant-select,
-    .qty-input {
+    .cart-qty-input {
       width: 100%;
       padding: 16px 18px;
       border: 1px solid rgba(255,255,255,0.08);
@@ -209,12 +211,14 @@
 
     #home-page,
     #contact-page,
-    #cart-page {
+    #cart-page,
+    #favorites-page {
       width: 100%;
     }
 
     #contact-page,
-    #cart-page {
+    #cart-page,
+    #favorites-page {
       display: none;
     }
 
@@ -283,6 +287,7 @@
 
     .product-body {
       padding: 16px;
+      text-align: left;
     }
 
     .product-title {
@@ -334,6 +339,7 @@
       background: rgba(255,255,255,0.92);
       color: #111827;
       box-shadow: none;
+      font-weight: 600;
     }
 
     .qty-row {
@@ -343,11 +349,13 @@
       margin-top: 12px;
     }
 
-    .qty-input {
+    .qty-input,
+    .cart-qty-input {
       background: rgba(255,255,255,0.92);
       color: #111827;
       box-shadow: none;
       max-width: 110px;
+      font-weight: 600;
     }
 
     .product-actions {
@@ -364,6 +372,7 @@
       padding: 20px;
       color: var(--muted-text);
       font-size: 15px;
+      text-align: left;
     }
 
     .cart-list {
@@ -409,6 +418,38 @@
       text-align: left;
     }
 
+    .cart-row-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--success-green);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 9999;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     @media (min-width: 700px) {
       .title-panel { padding: 42px 20px 30px 20px; }
       .title-panel h1 { font-size: 48px; }
@@ -446,6 +487,7 @@
 
     <div class="top-buttons">
       <button type="button" onclick="showPage('home-page')">Produkty</button>
+      <button type="button" onclick="showPage('favorites-page'); renderFavorites();">Obľúbené</button>
       <button type="button" onclick="showPage('cart-page'); renderCart();">Košík</button>
       <button type="button" onclick="showPage('contact-page')">Kontaktný formulár</button>
     </div>
@@ -493,7 +535,20 @@
               <div id="products-empty" class="empty-state">Zatiaľ nie sú načítané žiadne produkty.</div>
             </div>
           </div>
+        </div>
+      </div>
 
+      <div id="favorites-page">
+        <div class="center-panel">
+          <h2>Obľúbené produkty</h2>
+          <p>Tu si môžete uložiť produkty pre rýchlejšie objednanie nabudúce.</p>
+
+          <div id="favorites-list" class="cart-list"></div>
+
+          <div class="cart-buttons">
+            <button type="button" onclick="clearFavorites()">Vymazať obľúbené</button>
+            <button type="button" onclick="showPage('home-page')">Späť na produkty</button>
+          </div>
         </div>
       </div>
 
@@ -553,25 +608,39 @@
     </div>
   </div>
 
+  <div id="toast" class="toast">Pridané do košíka</div>
+
   <script>
     const FEED_URL = 'https://www.virivkyonline.sk/universal.xml';
     const FEED_PROXY_URL = 'https://virivkyapp.lechstav.workers.dev/feed?url=' + encodeURIComponent(FEED_URL);
 
     let allProducts = [];
     let categoryMap = {};
-    let currentCategory = null;
     let uidCounter = 0;
+    let toastTimeout = null;
 
     function showPage(pageId) {
       document.getElementById('home-page').style.display = 'none';
       document.getElementById('contact-page').style.display = 'none';
       document.getElementById('cart-page').style.display = 'none';
+      document.getElementById('favorites-page').style.display = 'none';
       document.getElementById(pageId).style.display = 'block';
     }
 
     function nextUid(prefix = 'id') {
       uidCounter += 1;
       return `${prefix}_${Date.now()}_${uidCounter}`;
+    }
+
+    function showToast(message = 'Pridané do košíka') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
     }
 
     function textFromNode(node, selectors) {
@@ -840,18 +909,122 @@
       localStorage.setItem('platinum_cart', JSON.stringify(cart));
     }
 
-    function clearCart() {
-      saveCart([]);
-      renderCart();
-      document.getElementById('order-status').textContent = 'Košík bol vymazaný.';
-    }
-
     function addToCart(item) {
       const cart = getCart();
       cart.push(item);
       saveCart(cart);
       renderCart();
-      alert('Produkt bol pridaný do košíka.');
+      showToast('Pridané do košíka');
+    }
+
+    function removeCartItem(index) {
+      const cart = getCart();
+      cart.splice(index, 1);
+      saveCart(cart);
+      renderCart();
+    }
+
+    function updateCartQty(index, qty) {
+      const cart = getCart();
+      if (!cart[index]) return;
+      cart[index].qty = Math.max(1, parseInt(qty || 1, 10));
+      saveCart(cart);
+      renderCart();
+    }
+
+    function clearCart() {
+      localStorage.removeItem('platinum_cart');
+      renderCart();
+      document.getElementById('order-status').textContent = 'Košík bol vymazaný.';
+    }
+
+    function getFavorites() {
+      try {
+        return JSON.parse(localStorage.getItem('platinum_favorites') || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function saveFavorites(favorites) {
+      localStorage.setItem('platinum_favorites', JSON.stringify(favorites));
+    }
+
+    function addToFavorites(item) {
+      const favorites = getFavorites();
+
+      const exists = favorites.some(f =>
+        f.title === item.title &&
+        (f.oblozenie || '') === (item.oblozenie || '') &&
+        (f.akryl || '') === (item.akryl || '')
+      );
+
+      if (exists) {
+        showToast('Produkt už je v obľúbených');
+        return;
+      }
+
+      favorites.push(item);
+      saveFavorites(favorites);
+      renderFavorites();
+      showToast('Uložené do obľúbených');
+    }
+
+    function removeFavorite(index) {
+      const favorites = getFavorites();
+      favorites.splice(index, 1);
+      saveFavorites(favorites);
+      renderFavorites();
+    }
+
+    function clearFavorites() {
+      localStorage.removeItem('platinum_favorites');
+      renderFavorites();
+    }
+
+    function addFavoriteToCart(index) {
+      const favorites = getFavorites();
+      const item = favorites[index];
+      if (!item) return;
+
+      addToCart({
+        title: item.title,
+        price: item.price,
+        image: item.image || '',
+        qty: 1,
+        oblozenie: item.oblozenie || '',
+        akryl: item.akryl || ''
+      });
+    }
+
+    function renderFavorites() {
+      const favorites = getFavorites();
+      const list = document.getElementById('favorites-list');
+
+      list.innerHTML = '';
+
+      if (!favorites.length) {
+        list.innerHTML = '<div class="empty-state">Zatiaľ nemáte uložené žiadne obľúbené produkty.</div>';
+        return;
+      }
+
+      favorites.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'cart-item';
+        div.innerHTML = `
+          <div class="cart-item-title">${escapeHtml(item.title)}</div>
+          <div class="cart-item-meta">
+            ${item.oblozenie ? 'Farba obloženia: ' + escapeHtml(item.oblozenie) + '<br>' : ''}
+            ${item.akryl ? 'Farba akrylu: ' + escapeHtml(item.akryl) + '<br>' : ''}
+          </div>
+          <div class="cart-item-price">${escapeHtml(priceToDisplay(item.price))}</div>
+          <div class="product-actions">
+            <button class="product-button" type="button" onclick="addFavoriteToCart(${index})">Pridať do košíka</button>
+            <button class="product-button" type="button" onclick="removeFavorite(${index})">Odstrániť</button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
     }
 
     function renderGroupedProducts(groups, title, subtitle) {
@@ -886,6 +1059,7 @@
         const oblozenieId = nextUid('oblozenie');
         const qtyId = nextUid('qty');
         const buttonId = nextUid('addbtn');
+        const favButtonId = nextUid('favbtn');
 
         card.innerHTML = `
           ${imageHtml}
@@ -919,6 +1093,7 @@
 
             <div class="product-actions">
               <button class="product-button" type="button" id="${buttonId}">Pridať do košíka</button>
+              <button class="product-button" type="button" id="${favButtonId}">♡ Uložiť</button>
             </div>
           </div>
         `;
@@ -944,11 +1119,27 @@
             akryl
           });
         });
+
+        const favBtn = document.getElementById(favButtonId);
+        favBtn.addEventListener('click', function() {
+          const oblozenieEl = document.getElementById(oblozenieId);
+          const akrylEl = document.getElementById(akrylId);
+
+          const oblozenie = oblozenieEl ? oblozenieEl.value : '';
+          const akryl = akrylEl ? akrylEl.value : '';
+
+          addToFavorites({
+            title: group.baseTitle || first.title || 'Bez názvu',
+            price: first.price || '',
+            image: first.image || '',
+            oblozenie,
+            akryl
+          });
+        });
       });
     }
 
     function renderCategory(categoryName) {
-      currentCategory = categoryName;
       setActiveCategoryButton(categoryName);
       const products = categoryMap[categoryName] || [];
       const groups = groupProducts(products);
@@ -972,7 +1163,8 @@
 
       cart.forEach((item, index) => {
         const price = parsePriceNumber(item.price);
-        const itemTotal = price * (item.qty || 1);
+        const qty = Math.max(1, parseInt(item.qty || 1, 10));
+        const itemTotal = price * qty;
         total += itemTotal;
 
         const div = document.createElement('div');
@@ -980,12 +1172,12 @@
         div.innerHTML = `
           <div class="cart-item-title">${escapeHtml(item.title)}</div>
           <div class="cart-item-meta">
-            Počet: ${item.qty || 1}<br>
             ${item.oblozenie ? 'Farba obloženia: ' + escapeHtml(item.oblozenie) + '<br>' : ''}
             ${item.akryl ? 'Farba akrylu: ' + escapeHtml(item.akryl) + '<br>' : ''}
           </div>
           <div class="cart-item-price">${escapeHtml(priceToDisplay(item.price))}</div>
-          <div class="product-actions">
+          <div class="cart-row-controls">
+            <input class="cart-qty-input" type="number" min="1" value="${qty}" onchange="updateCartQty(${index}, this.value)">
             <button class="product-button" type="button" onclick="removeCartItem(${index})">Odstrániť</button>
           </div>
         `;
@@ -993,13 +1185,6 @@
       });
 
       totalEl.textContent = `Spolu: ${total.toFixed(2)} €`;
-    }
-
-    function removeCartItem(index) {
-      const cart = getCart();
-      cart.splice(index, 1);
-      saveCart(cart);
-      renderCart();
     }
 
     async function fetchFeedText() {
@@ -1100,6 +1285,12 @@
         return;
       }
 
+      const phoneClean = phone.replace(/\s+/g, '');
+      if (!/^09\d{8}$/.test(phoneClean)) {
+        status.textContent = 'Telefónne číslo musí mať 10 číslic a začínať na 09.';
+        return;
+      }
+
       const zipClean = zip.replace(/\s+/g, '');
       if (!/^\d{5}$/.test(zipClean)) {
         status.textContent = 'PSČ musí mať 5 číslic.';
@@ -1110,7 +1301,7 @@
         type: 'order',
         meno,
         email,
-        phone,
+        phone: phoneClean,
         street,
         houseNumber,
         zip: zipClean,
@@ -1145,6 +1336,7 @@
 
     loadFeed();
     renderCart();
+    renderFavorites();
   </script>
 </body>
 </html>
