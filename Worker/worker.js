@@ -52,10 +52,13 @@ async function handleFeedProxy(url, corsHeaders) {
       });
     }
 
-    const feedResponse = await fetch(target, {
+    const targetUrl = new URL(target);
+
+    const feedResponse = await fetch(targetUrl.toString(), {
       method: "GET",
       headers: {
-        "User-Agent": "Mozilla/5.0 PlatinumLechSpaApp/1.0"
+        "User-Agent": "Mozilla/5.0 PlatinumLechSpaApp/1.0",
+        "Accept-Language": "sk-SK,sk;q=0.9,en;q=0.8"
       }
     });
 
@@ -174,7 +177,8 @@ function parseProductHtml(html, productUrl) {
     ).trim() ||
     findPriceInHtml(cleanedHtml);
 
-  const description = extractDescription(cleanedHtml, metaDescription);
+  const description = extractFullDescription(cleanedHtml, metaDescription);
+  const shortDescription = buildShortDescription(description, metaDescription);
   const variants = extractVariants(cleanedHtml);
 
   return {
@@ -183,6 +187,7 @@ function parseProductHtml(html, productUrl) {
     price,
     image: mainImage,
     gallery,
+    shortDescription,
     description,
     variants
   };
@@ -211,7 +216,7 @@ function stripTags(text) {
       .replace(/<[^>]+>/g, " ")
       .replace(/\u00a0/g, " ")
       .replace(/[ \t]+/g, " ")
-      .replace(/\n\s+\n/g, "\n\n")
+      .replace(/\n[ \t]+/g, "\n")
       .replace(/\n{3,}/g, "\n\n")
       .trim()
   );
@@ -250,6 +255,7 @@ function scoreImageUrl(url, title) {
   if (u.includes("icon")) score -= 30;
   if (u.includes("logo")) score -= 30;
   if (u.includes("banner")) score -= 10;
+  if (u.includes("placeholder")) score -= 30;
 
   for (const w of words) {
     if (u.includes(w)) score += 3;
@@ -319,23 +325,50 @@ function findPriceInHtml(html) {
   return "";
 }
 
-function extractDescription(html, fallback) {
+function extractFullDescription(html, fallback) {
   const candidates = [
     /<div[^>]*class=["'][^"']*description-inner[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
     /<div[^>]*class=["'][^"']*product-description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
+    /<div[^>]*class=["'][^"']*detail-description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
     /<div[^>]*id=["'][^"']*description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
     /<section[^>]*class=["'][^"']*description[^"']*["'][^>]*>([\s\S]*?)<\/section>/i
   ];
 
   for (const regex of candidates) {
     const found = firstMatch(html, regex);
-    const stripped = stripTags(found);
+    const stripped = cleanDescriptionText(stripTags(found));
     if (stripped && stripped.length > 80) {
       return stripped;
     }
   }
 
-  return fallback || "";
+  return cleanDescriptionText(fallback || "");
+}
+
+function cleanDescriptionText(text) {
+  return String(text || "")
+    .replace(/^\s*Popis\s*/i, "")
+    .replace(/\bZdieľať\b.*$/i, "")
+    .replace(/\bTweet\b.*$/i, "")
+    .replace(/\bKód:\b.*$/i, "")
+    .replace(/\bStrážny pes\b.*$/i, "")
+    .replace(/\bSúvisiaci tovar\b[\s\S]*$/i, "")
+    .replace(/\bSuvisejici zbozi\b[\s\S]*$/i, "")
+    .replace(/\bHodnotenie produktu\b[\s\S]*$/i, "")
+    .replace(/\bDiskusia\b[\s\S]*$/i, "")
+    .replace(/\bParametre\b[\s\S]*$/i, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function buildShortDescription(description, fallback) {
+  const source = String(description || fallback || "").trim();
+  if (!source) return "";
+
+  const normalized = source.replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
+  if (normalized.length <= 220) return normalized;
+
+  return normalized.slice(0, 217).trim() + "...";
 }
 
 function extractVariants(html) {
@@ -717,4 +750,4 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-        }
+                  }
