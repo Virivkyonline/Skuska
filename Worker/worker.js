@@ -409,8 +409,10 @@ function buildShortDescription(description, fallback) {
 
 function extractVariants(html) {
   const selects = extractGenericSelectVariants(html);
+  const textGroups = extractTextVariants(stripTags(html));
+  const merged = dedupeVariantGroups([...selects, ...textGroups]);
 
-  const oblozenie = findVariantValuesByName(selects, [
+  const oblozenie = findVariantValuesByName(merged, [
     "farba obloženia a schodíkov",
     "farba oblozenia a schodikov",
     "farba obloženia",
@@ -419,7 +421,7 @@ function extractVariants(html) {
     "oblozenie"
   ]);
 
-  const akryl = findVariantValuesByName(selects, [
+  const akryl = findVariantValuesByName(merged, [
     "farba akrylu na výber",
     "farba akrylu na vyber",
     "farba akrylu",
@@ -429,8 +431,76 @@ function extractVariants(html) {
   return {
     oblozenie,
     akryl,
-    generic: selects
+    generic: merged
   };
+}
+
+function extractTextVariants(plainText) {
+  const text = String(plainText || "").replace(/\r/g, "");
+
+  const patterns = [
+    {
+      name: "Farba",
+      regex: /Farba\s+Zvoľte variant\s+(.+?)(?:\n\s*Zvolený variant|\n\s*Kód:|\n\s*€|$)/i
+    },
+    {
+      name: "Výkon",
+      regex: /V[ÝY]KON\s+Zvoľte variant\s+(.+?)(?:\n\s*Zvolený variant|\n\s*Kód:|\n\s*€|$)/i
+    },
+    {
+      name: "Rozmer",
+      regex: /Rozmer\s+Zvoľte variant\s+(.+?)(?:\n\s*Zvolený variant|\n\s*Kód:|\n\s*€|$)/i
+    },
+    {
+      name: "Typ",
+      regex: /Typ\s+Zvoľte variant\s+(.+?)(?:\n\s*Zvolený variant|\n\s*Kód:|\n\s*€|$)/i
+    }
+  ];
+
+  const groups = [];
+
+  for (const pattern of patterns) {
+    const m = text.match(pattern.regex);
+    if (!m || !m[1]) continue;
+
+    const values = splitVariantValues(m[1]);
+    if (values.length) {
+      groups.push({
+        name: pattern.name,
+        values
+      });
+    }
+  }
+
+  return groups;
+}
+
+function splitVariantValues(rawText) {
+  const text = String(rawText || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!text) return [];
+
+  const tokens = text.split(" ").map(x => x.trim()).filter(Boolean);
+  const values = [];
+
+  for (const token of tokens) {
+    if (
+      /^zvoľte$/i.test(token) ||
+      /^zvolte$/i.test(token) ||
+      /^variant$/i.test(token) ||
+      /^reset$/i.test(token) ||
+      /^vybraných$/i.test(token) ||
+      /^vybranych$/i.test(token) ||
+      /^parametrov\.?$/i.test(token)
+    ) {
+      continue;
+    }
+    values.push(token);
+  }
+
+  return [...new Set(values)];
 }
 
 function extractGenericSelectVariants(html) {
@@ -475,28 +545,6 @@ function extractSelectLabel(html, selectIndex) {
     if (
       text &&
       text.length < 80 &&
-      !/do košíka/i.test(text) &&
-      !/do kosika/i.test(text) &&
-      !/kód/i.test(text) &&
-      !/kod/i.test(text) &&
-      !/cena/i.test(text)
-    ) {
-      return text;
-    }
-  }
-
-  const plain = stripTags(before)
-    .split("\n")
-    .map(x => x.trim())
-    .filter(Boolean);
-
-  for (let i = plain.length - 1; i >= 0; i--) {
-    const text = plain[i];
-    if (
-      text &&
-      text.length < 80 &&
-      !/zvoľte variant/i.test(text) &&
-      !/zvolte variant/i.test(text) &&
       !/do košíka/i.test(text) &&
       !/do kosika/i.test(text) &&
       !/kód/i.test(text) &&
@@ -862,4 +910,4 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-}
+        }
