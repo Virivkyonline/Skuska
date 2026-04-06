@@ -28,13 +28,13 @@
 
     body {
       background-color: var(--bg-color);
-      /* background-image: url('bublinky.png'); */
-      /* background-size: cover; */
-      /* background-position: center; */
-      /* background-repeat: no-repeat; */
     }
 
-    .page { min-height: 100vh; display: flex; flex-direction: column; }
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
     .title-panel {
       width: 100%;
@@ -73,7 +73,7 @@
     .cart-buttons button,
     .subcategory-buttons button,
     .product-card .product-actions a,
-    .load-feed-button {
+    .variant-select {
       width: 100%;
       padding: 16px 18px;
       border: 1px solid rgba(255,255,255,0.08);
@@ -92,7 +92,6 @@
     .nav-buttons button,
     .form-buttons button,
     .cart-buttons button,
-    .load-feed-button,
     .product-card .product-actions a {
       background: linear-gradient(180deg, #e2bf4d 0%, #cfa72d 100%);
       color: var(--button-text);
@@ -115,8 +114,7 @@
     .form-buttons button:hover,
     .cart-buttons button:hover,
     .subcategory-buttons button:hover,
-    .product-card .product-actions a:hover,
-    .load-feed-button:hover {
+    .product-card .product-actions a:hover {
       transform: translateY(-2px);
       box-shadow: 0 14px 30px rgba(0,0,0,0.28);
       filter: brightness(1.03);
@@ -154,7 +152,10 @@
       margin-bottom: 16px;
     }
 
-    .gold { color: var(--accent-text); font-weight: 700; }
+    .gold {
+      color: var(--accent-text);
+      font-weight: 700;
+    }
 
     input, textarea {
       width: 100%;
@@ -168,7 +169,10 @@
       color: #111827;
     }
 
-    textarea { min-height: 160px; resize: vertical; }
+    textarea {
+      min-height: 160px;
+      resize: vertical;
+    }
 
     .form-buttons, .cart-buttons {
       margin-top: 10px;
@@ -181,6 +185,7 @@
       margin-top: 14px;
       font-size: 15px;
       color: #FFFFFF;
+      text-align: left;
     }
 
     .logo-bottom {
@@ -198,25 +203,24 @@
       display: block;
     }
 
-    #home-page, #contact-page, #cart-page { width: 100%; }
-    #contact-page, #cart-page { display: none; }
+    #home-page, #contact-page, #cart-page {
+      width: 100%;
+    }
 
-    .menu-box { margin-top: 22px; text-align: left; }
+    #contact-page, #cart-page {
+      display: none;
+    }
+
+    .menu-box {
+      margin-top: 22px;
+      text-align: left;
+    }
 
     .subcategory-buttons {
-      display: none;
+      display: flex;
       flex-direction: column;
       gap: 10px;
       margin-bottom: 20px;
-    }
-
-    .subcategory-buttons.show { display: flex; }
-
-    .feed-tools {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-bottom: 18px;
     }
 
     .products-section {
@@ -274,7 +278,9 @@
       display: block;
     }
 
-    .product-body { padding: 16px; }
+    .product-body {
+      padding: 16px;
+    }
 
     .product-title {
       font-size: 18px;
@@ -312,6 +318,29 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .variant-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .variant-label {
+      font-size: 13px;
+      color: var(--muted-text);
+      margin-bottom: -4px;
+    }
+
+    .variant-select {
+      background: rgba(255,255,255,0.92);
+      color: #111827;
+      justify-content: flex-start;
+      box-shadow: none;
+      padding: 12px 14px;
+      font-weight: 600;
     }
 
     .empty-state {
@@ -328,15 +357,12 @@
       .title-panel h1 { font-size: 48px; }
       .title-panel p { font-size: 20px; }
 
-      .nav-buttons { flex-direction: row; flex-wrap: wrap; }
+      .nav-buttons { flex-direction: row; }
       .nav-buttons button { flex: 1; }
 
       .center-panel { padding: 36px 30px; }
       .center-panel h2 { font-size: 32px; }
       .center-panel p { font-size: 20px; }
-
-      .feed-tools { flex-direction: row; align-items: center; }
-      .feed-tools .load-feed-button { width: auto; }
 
       .products-grid { grid-template-columns: repeat(2, 1fr); }
       .logo-bottom { min-height: 170px; }
@@ -357,8 +383,6 @@
     </div>
 
     <div class="nav-buttons">
-      <button type="button" onclick="showPage('home-page')">Hlavná stránka</button>
-      <button type="button" onclick="toggleSubcategories()">Menu</button>
       <button type="button" onclick="showPage('cart-page')">Košík</button>
       <button type="button" onclick="showPage('contact-page')">Kontaktný formulár</button>
     </div>
@@ -393,10 +417,7 @@
           </p>
 
           <div class="menu-box">
-            <div class="feed-tools">
-              <button class="load-feed-button" type="button" onclick="loadFeed()">Načítať kategórie a produkty</button>
-              <p id="feed-status">Feed zatiaľ nie je načítaný.</p>
-            </div>
+            <p id="feed-status">Načítavam kategórie a produkty...</p>
 
             <div id="subcategoryButtons" class="subcategory-buttons"></div>
 
@@ -424,7 +445,7 @@
 
             <div class="form-buttons">
               <button type="submit">Odoslať formulár</button>
-              <button type="button" onclick="showPage('home-page')">Hlavná stránka</button>
+              <button type="button" onclick="showPage('home-page')">Späť na produkty</button>
             </div>
           </form>
 
@@ -440,7 +461,7 @@
           <p>Neskôr sem môžeme doplniť produkty, ceny, počet kusov, výpočet sumy a objednávkový formulár.</p>
 
           <div class="cart-buttons">
-            <button type="button" onclick="showPage('home-page')">Hlavná stránka</button>
+            <button type="button" onclick="showPage('home-page')">Späť na produkty</button>
           </div>
         </div>
       </div>
@@ -459,17 +480,13 @@
 
     let allProducts = [];
     let categoryMap = {};
+    let groupedProducts = {};
 
     function showPage(pageId) {
       document.getElementById('home-page').style.display = 'none';
       document.getElementById('contact-page').style.display = 'none';
       document.getElementById('cart-page').style.display = 'none';
       document.getElementById(pageId).style.display = 'block';
-    }
-
-    function toggleSubcategories() {
-      showPage('home-page');
-      document.getElementById('subcategoryButtons').classList.toggle('show');
     }
 
     function textFromNode(node, selectors) {
@@ -501,6 +518,27 @@
         .replace(/\s+/g, ' ')
         .replace(/\|/g, ' / ')
         .trim();
+    }
+
+    function getLeafCategory(name) {
+      if (!name) return 'Ostatné produkty';
+      const parts = name.split('/').map(x => x.trim()).filter(Boolean);
+      return parts.length ? parts[parts.length - 1] : name.trim();
+    }
+
+    function shouldHideCategory(fullCategory, leafCategory) {
+      const full = (fullCategory || '').trim().toLowerCase();
+      const leaf = (leafCategory || '').trim().toLowerCase();
+
+      if (full === 'akrylátová vírivka (balboa vírivka)' || full === 'akrylatova virivka (balboa virivka)') {
+        return true;
+      }
+
+      if (leaf === 'akrylátová vírivka (balboa vírivka)' || leaf === 'akrylatova virivka (balboa virivka)') {
+        return true;
+      }
+
+      return false;
     }
 
     function parseXmlToProducts(xmlText) {
@@ -566,6 +604,7 @@
             link,
             image,
             category,
+            leafCategory: getLeafCategory(category),
             price
           });
         }
@@ -578,14 +617,71 @@
       const map = {};
 
       products.forEach(product => {
-        const cat = product.category || 'Ostatné produkty';
-        if (!map[cat]) {
-          map[cat] = [];
+        const leaf = product.leafCategory || 'Ostatné produkty';
+
+        if (shouldHideCategory(product.category, leaf)) {
+          return;
         }
-        map[cat].push(product);
+
+        if (!map[leaf]) {
+          map[leaf] = [];
+        }
+        map[leaf].push(product);
       });
 
       return map;
+    }
+
+    function normalizeBaseTitle(title) {
+      return (title || '')
+        .replace(/\s+/g, ' ')
+        .replace(/\([^)]*\)/g, '')
+        .replace(/farba\s+oblozenia.*$/i, '')
+        .replace(/farba\s+akrylu.*$/i, '')
+        .replace(/oblozenie.*$/i, '')
+        .replace(/akryl.*$/i, '')
+        .trim();
+    }
+
+    function extractColorVariants(product) {
+      const txt = `${product.title} ${product.description}`.toLowerCase();
+
+      const oblozenieMatches = [];
+      const akrylMatches = [];
+
+      const obRegex = /farba\s+oblozenia[:\-]?\s*([a-záäčďéíľĺňóôŕšťúýž0-9 ,\-]+)/i;
+      const akRegex = /farba\s+akrylu[:\-]?\s*([a-záäčďéíľĺňóôŕšťúýž0-9 ,\-]+)/i;
+
+      const ob = txt.match(obRegex);
+      const ak = txt.match(akRegex);
+
+      if (ob && ob[1]) oblozenieMatches.push(ob[1].trim());
+      if (ak && ak[1]) akrylMatches.push(ak[1].trim());
+
+      return {
+        oblozenie: oblozenieMatches,
+        akryl: akrylMatches
+      };
+    }
+
+    function groupVariants(products) {
+      const grouped = {};
+
+      products.forEach(product => {
+        const key = normalizeBaseTitle(product.title) || product.title || product.link;
+
+        if (!grouped[key]) {
+          grouped[key] = {
+            baseTitle: key,
+            items: [],
+            category: product.leafCategory || product.category || 'Produkt'
+          };
+        }
+
+        grouped[key].items.push(product);
+      });
+
+      return Object.values(grouped);
     }
 
     function buildCategoryButtons() {
@@ -602,27 +698,42 @@
         btn.onclick = () => renderCategory(categoryName);
         wrap.appendChild(btn);
       });
-
-      wrap.classList.add('show');
     }
 
     function setActiveCategoryButton(categoryName) {
       const wrap = document.getElementById('subcategoryButtons');
       const buttons = Array.from(wrap.querySelectorAll('button'));
+
       buttons.forEach(btn => {
         const clean = btn.textContent.replace(/\s+\(\d+\)$/, '');
         btn.classList.toggle('active', clean === categoryName);
       });
     }
 
-    function renderProducts(products, title, subtitle) {
+    function buildVariantSelect(label, values) {
+      if (!values || !values.length) return '';
+
+      const unique = [...new Set(values.filter(Boolean))];
+      if (!unique.length) return '';
+
+      return `
+        <div class="variant-wrap">
+          <div class="variant-label">${escapeHtml(label)}</div>
+          <select class="variant-select">
+            ${unique.map(v => `<option>${escapeHtml(v)}</option>`).join('')}
+          </select>
+        </div>
+      `;
+    }
+
+    function renderGroupedProducts(groups, title, subtitle) {
       const grid = document.getElementById('products-grid');
       const empty = document.getElementById('products-empty');
       document.getElementById('products-title').textContent = title;
       document.getElementById('products-subtitle').textContent = subtitle;
       grid.innerHTML = '';
 
-      if (!products.length) {
+      if (!groups.length) {
         empty.style.display = 'block';
         empty.textContent = 'V tejto kategórii sa zatiaľ nenašli produkty.';
         return;
@@ -630,23 +741,34 @@
 
       empty.style.display = 'none';
 
-      products.forEach(product => {
-        const card = document.createElement('div');
-        card.className = 'product-card';
+      groups.forEach(group => {
+        const first = group.items[0];
+        const allOblozenie = [];
+        const allAkryl = [];
 
-        const imageHtml = product.image
-          ? `<div class="product-image-wrap"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"></div>`
+        group.items.forEach(item => {
+          const variants = extractColorVariants(item);
+          allOblozenie.push(...variants.oblozenie);
+          allAkryl.push(...variants.akryl);
+        });
+
+        const imageHtml = first.image
+          ? `<div class="product-image-wrap"><img src="${escapeHtml(first.image)}" alt="${escapeHtml(first.title)}"></div>`
           : `<div class="product-image-wrap"><span style="color:#cfd6e2;font-size:14px;">Bez obrázka</span></div>`;
 
+        const card = document.createElement('div');
+        card.className = 'product-card';
         card.innerHTML = `
           ${imageHtml}
           <div class="product-body">
-            <div class="product-category">${escapeHtml(product.category || 'Produkt')}</div>
-            <div class="product-title">${escapeHtml(product.title || 'Bez názvu')}</div>
-            <div class="product-price">${escapeHtml(priceToDisplay(product.price))}</div>
-            <div class="product-desc">${escapeHtml(product.description || 'Bez popisu produktu.')}</div>
+            <div class="product-category">${escapeHtml(first.leafCategory || first.category || 'Produkt')}</div>
+            <div class="product-title">${escapeHtml(group.baseTitle || first.title || 'Bez názvu')}</div>
+            <div class="product-price">${escapeHtml(priceToDisplay(first.price))}</div>
+            <div class="product-desc">${escapeHtml(first.description || 'Bez popisu produktu.')}</div>
+            ${buildVariantSelect('Farba obloženia', allOblozenie)}
+            ${buildVariantSelect('Farba akrylu', allAkryl)}
             <div class="product-actions">
-              ${product.link ? `<a href="${escapeHtml(product.link)}" target="_blank" rel="noopener noreferrer">Otvoriť produkt</a>` : ''}
+              ${first.link ? `<a href="${escapeHtml(first.link)}" target="_blank" rel="noopener noreferrer">Otvoriť produkt</a>` : ''}
             </div>
           </div>
         `;
@@ -657,7 +779,8 @@
     function renderCategory(categoryName) {
       setActiveCategoryButton(categoryName);
       const products = categoryMap[categoryName] || [];
-      renderProducts(products, categoryName, `Načítané produkty: ${products.length}`);
+      const groups = groupVariants(products);
+      renderGroupedProducts(groups, categoryName, `Produktové skupiny: ${groups.length}`);
     }
 
     async function fetchFeedText() {
@@ -691,7 +814,6 @@
           renderCategory(categories[0]);
           status.textContent = `Feed načítaný. Kategórie: ${categories.length}, produkty: ${allProducts.length}`;
         } else {
-          renderProducts([], 'Produkty', 'Feed je načítaný, ale nenašli sa kategórie.');
           status.textContent = 'Feed načítaný, ale nenašli sa kategórie.';
         }
       } catch (error) {
@@ -728,6 +850,8 @@
         status.textContent = 'Chyba spojenia so serverom.';
       }
     });
+
+    loadFeed();
   </script>
 </body>
 </html>
