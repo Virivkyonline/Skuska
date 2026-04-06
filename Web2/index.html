@@ -335,7 +335,6 @@
       color: #111827;
       box-shadow: none;
       padding: 12px 14px;
-      font-weight: 600;
     }
 
     .qty-row {
@@ -350,7 +349,6 @@
       color: #111827;
       box-shadow: none;
       padding: 12px 14px;
-      font-weight: 600;
       max-width: 110px;
     }
 
@@ -561,12 +559,18 @@
     let allProducts = [];
     let categoryMap = {};
     let currentCategory = null;
+    let uidCounter = 0;
 
     function showPage(pageId) {
       document.getElementById('home-page').style.display = 'none';
       document.getElementById('contact-page').style.display = 'none';
       document.getElementById('cart-page').style.display = 'none';
       document.getElementById(pageId).style.display = 'block';
+    }
+
+    function nextUid(prefix = 'id') {
+      uidCounter += 1;
+      return `${prefix}_${Date.now()}_${uidCounter}`;
     }
 
     function textFromNode(node, selectors) {
@@ -578,7 +582,7 @@
     }
 
     function escapeHtml(text) {
-      return (text || '')
+      return String(text || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -588,12 +592,12 @@
 
     function priceToDisplay(priceText) {
       if (!priceText) return 'Cena na vyžiadanie';
-      return priceText.replace(/\s+/g, ' ').trim();
+      return String(priceText).replace(/\s+/g, ' ').trim();
     }
 
     function parsePriceNumber(priceText) {
       if (!priceText) return 0;
-      const cleaned = priceText.replace(',', '.').replace(/[^0-9.]/g, '');
+      const cleaned = String(priceText).replace(',', '.').replace(/[^0-9.]/g, '');
       const num = parseFloat(cleaned);
       return isNaN(num) ? 0 : num;
     }
@@ -616,24 +620,57 @@
         .trim();
 
       const parts = normalized.split('/').map(x => x.trim()).filter(Boolean);
+      const fullLower = normalized.toLowerCase();
       let leaf = parts.length ? parts[parts.length - 1] : normalized;
       const lower = leaf.toLowerCase();
 
-      if (lower.includes('dve osoby') || lower.includes('dvojmiest') || lower.includes('2 osoby')) {
+      if (
+        fullLower.includes('virivky balboa') &&
+        (
+          lower.includes('dve osoby') ||
+          lower.includes('dvojmiest') ||
+          lower.includes('2 osoby') ||
+          lower.includes('2-3') ||
+          lower.includes('2 / 3') ||
+          lower.includes('2 miest') ||
+          lower.includes('3 miest') ||
+          lower.includes('3 osoby') ||
+          lower.includes('najlepšie vírivky') ||
+          lower.includes('najlepsie virivky') ||
+          lower.includes('malé vírivky') ||
+          lower.includes('male virivky')
+        )
+      ) {
         return 'Najlepšie vírivky (vírivky pre dve osoby)';
       }
 
       if (
-        lower.includes('6 osôb') ||
-        lower.includes('6 osob') ||
-        lower.includes('6 osoby') ||
-        lower.includes('a viac') ||
-        lower.includes('6+')
+        fullLower.includes('virivky balboa') &&
+        (
+          lower.includes('6 osôb') ||
+          lower.includes('6 osob') ||
+          lower.includes('6 osoby') ||
+          lower.includes('6 miest') ||
+          lower.includes('a viac') ||
+          lower.includes('6+') ||
+          lower.includes('7 osob') ||
+          lower.includes('7 miest') ||
+          lower.includes('veľké vírivky') ||
+          lower.includes('velke virivky')
+        )
       ) {
         return 'Vírivky pre 6 osôb a viac';
       }
 
-      if (lower.includes('4-5')) {
+      if (
+        fullLower.includes('virivky balboa') &&
+        (
+          lower.includes('4-5') ||
+          lower.includes('4 / 5') ||
+          lower.includes('4 osoby') ||
+          lower.includes('5 osoby')
+        )
+      ) {
         return 'Vírivka pre 4-5 osoby';
       }
 
@@ -652,7 +689,6 @@
       if (leaf === 'akrylátová vírivka (balboa vírivka)' || leaf === 'akrylatova virivka (balboa virivka)') return true;
       if (leaf === 'na splátky' || leaf === 'na splatky') return true;
       if (leaf === 'naše ďalšie projekty' || leaf === 'nase dalsie projekty') return true;
-
       return false;
     }
 
@@ -669,8 +705,8 @@
 
     function parseParams(node) {
       const params = [];
-
       const paramNodes = node.querySelectorAll('PARAM');
+
       paramNodes.forEach(paramNode => {
         const name = textFromNode(paramNode, ['PARAM_NAME', 'NAME', 'param_name']);
         const value = textFromNode(paramNode, ['VAL', 'VALUE', 'val']);
@@ -722,7 +758,7 @@
             link,
             params,
             colorsAkryl: getVariantValues(params, ['akryl']),
-            colorsOblozenie: getVariantValues(params, ['obložen', 'oblozen', 'panel', 'farba oblo']),
+            colorsOblozenie: getVariantValues(params, ['obložen', 'oblozen', 'panel', 'farba oblo'])
           });
         }
       });
@@ -732,12 +768,14 @@
 
     function buildCategoryMap(products) {
       const map = {};
+
       products.forEach(product => {
         const leaf = product.leafCategory || 'Ostatné produkty';
         if (shouldHideCategory(product.category, leaf)) return;
         if (!map[leaf]) map[leaf] = [];
         map[leaf].push(product);
       });
+
       return map;
     }
 
@@ -765,9 +803,17 @@
       const wrap = document.getElementById('categoryButtons');
       wrap.innerHTML = '';
 
-      const categories = Object.keys(categoryMap).sort((a, b) => a.localeCompare(b, 'sk'));
+      const forcedOrder = [
+        'Najlepšie vírivky (vírivky pre dve osoby)',
+        'Vírivka pre 4-5 osoby',
+        'Vírivky pre 6 osôb a viac'
+      ];
+
+      const existing = Object.keys(categoryMap).sort((a, b) => a.localeCompare(b, 'sk'));
+      const categories = [...new Set([...forcedOrder, ...existing])];
+
       categories.forEach(categoryName => {
-        const count = categoryMap[categoryName].length;
+        const count = (categoryMap[categoryName] || []).length;
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.textContent = `${categoryName} (${count})`;
@@ -779,6 +825,7 @@
     function setActiveCategoryButton(categoryName) {
       const wrap = document.getElementById('categoryButtons');
       const buttons = Array.from(wrap.querySelectorAll('button'));
+
       buttons.forEach(btn => {
         const clean = btn.textContent.replace(/\s+\(\d+\)$/, '');
         btn.classList.toggle('active', clean === categoryName);
@@ -807,6 +854,7 @@
       const cart = getCart();
       cart.push(item);
       saveCart(cart);
+      renderCart();
       alert('Produkt bol pridaný do košíka.');
     }
 
@@ -826,7 +874,7 @@
 
       empty.style.display = 'none';
 
-      groups.forEach((group, index) => {
+      groups.forEach((group) => {
         const first = group.items[0];
         const allAkryl = [...new Set(group.items.flatMap(i => i.colorsAkryl || []))];
         const allOblozenie = [...new Set(group.items.flatMap(i => i.colorsOblozenie || []))];
@@ -838,9 +886,10 @@
           ? `<div class="product-image-wrap"><img src="${escapeHtml(first.image)}" alt="${escapeHtml(first.title)}"></div>`
           : `<div class="product-image-wrap"><span style="color:#cfd6e2;font-size:14px;">Bez obrázka</span></div>`;
 
-        const akrylId = `akryl_${currentCategory}_${index}`;
-        const oblozenieId = `oblozenie_${currentCategory}_${index}`;
-        const qtyId = `qty_${currentCategory}_${index}`;
+        const akrylId = nextUid('akryl');
+        const oblozenieId = nextUid('oblozenie');
+        const qtyId = nextUid('qty');
+        const buttonId = nextUid('addbtn');
 
         card.innerHTML = `
           ${imageHtml}
@@ -873,37 +922,32 @@
             </div>
 
             <div class="product-actions">
-              <button class="product-button" type="button" onclick="handleAddToCart(
-                ${JSON.stringify(group.baseTitle)},
-                ${JSON.stringify(first.price)},
-                ${JSON.stringify(first.image)},
-                '${oblozenieId}',
-                '${akrylId}',
-                '${qtyId}'
-              )">Pridať do košíka</button>
+              <button class="product-button" type="button" id="${buttonId}">Pridať do košíka</button>
             </div>
           </div>
         `;
+
         grid.appendChild(card);
-      });
-    }
 
-    function handleAddToCart(title, price, image, oblozenieId, akrylId, qtyId) {
-      const oblozenieEl = document.getElementById(oblozenieId);
-      const akrylEl = document.getElementById(akrylId);
-      const qtyEl = document.getElementById(qtyId);
+        const addBtn = document.getElementById(buttonId);
+        addBtn.addEventListener('click', function() {
+          const oblozenieEl = document.getElementById(oblozenieId);
+          const akrylEl = document.getElementById(akrylId);
+          const qtyEl = document.getElementById(qtyId);
 
-      const qty = Math.max(1, parseInt(qtyEl?.value || '1', 10));
-      const oblozenie = oblozenieEl ? oblozenieEl.value : '';
-      const akryl = akrylEl ? akrylEl.value : '';
+          const qty = Math.max(1, parseInt(qtyEl?.value || '1', 10));
+          const oblozenie = oblozenieEl ? oblozenieEl.value : '';
+          const akryl = akrylEl ? akrylEl.value : '';
 
-      addToCart({
-        title,
-        price,
-        image,
-        qty,
-        oblozenie,
-        akryl
+          addToCart({
+            title: group.baseTitle || first.title || 'Bez názvu',
+            price: first.price || '',
+            image: first.image || '',
+            qty,
+            oblozenie,
+            akryl
+          });
+        });
       });
     }
 
@@ -985,11 +1029,20 @@
         categoryMap = buildCategoryMap(allProducts);
         buildCategoryButtons();
 
-        const categories = Object.keys(categoryMap).sort((a, b) => a.localeCompare(b, 'sk'));
+        console.log('Najdene kategorie:', Object.keys(categoryMap));
 
-        if (categories.length > 0) {
-          renderCategory(categories[0]);
-          status.textContent = `Feed načítaný. Kategórie: ${categories.length}, produkty: ${allProducts.length}`;
+        const forcedStartOrder = [
+          'Najlepšie vírivky (vírivky pre dve osoby)',
+          'Vírivka pre 4-5 osoby',
+          'Vírivky pre 6 osôb a viac'
+        ];
+
+        const firstAvailable = forcedStartOrder.find(name => (categoryMap[name] || []).length > 0)
+          || Object.keys(categoryMap).sort((a, b) => a.localeCompare(b, 'sk'))[0];
+
+        if (firstAvailable) {
+          renderCategory(firstAvailable);
+          status.textContent = `Feed načítaný. Kategórie: ${Object.keys(categoryMap).length}, produkty: ${allProducts.length}`;
         } else {
           status.textContent = 'Feed načítaný, ale nenašli sa kategórie.';
         }
