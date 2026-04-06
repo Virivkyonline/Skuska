@@ -168,8 +168,8 @@ function parseProductHtml(html, productUrl) {
     firstMatch(cleanedHtml, /<meta[^>]+name=["']description["'][^>]+content=["']([^"]+)["']/i) || ""
   ).trim();
 
-  const mainImage = pickBestImage(cleanedHtml, productUrl, title);
   const gallery = extractGalleryImages(cleanedHtml, productUrl);
+  const mainImage = gallery[0] || "";
 
   const price =
     decodeHtmlEntities(
@@ -241,35 +241,38 @@ function absolutizeUrl(url, base) {
   }
 }
 
-function scoreImageUrl(url, title) {
-  const u = String(url || "").toLowerCase();
-  const words = String(title || "").toLowerCase().split(/\s+/).filter(w => w.length > 2);
+function extractGalleryImages(html, baseUrl) {
+  const results = [];
 
-  let score = 0;
+  const galleryBlockRegexes = [
+    /<div[^>]*class=["'][^"']*p-detail-inner[^"']*["'][\s\S]*?<\/div>\s*<\/div>/i,
+    /<div[^>]*class=["'][^"']*p-image-wrapper[^"']*["'][\s\S]*?<\/div>/i,
+    /<div[^>]*class=["'][^"']*p-thumbnails-wrapper[^"']*["'][\s\S]*?<\/div>/i,
+    /<div[^>]*class=["'][^"']*p-image-thumbnails[^"']*["'][\s\S]*?<\/div>/i,
+    /<div[^>]*class=["'][^"']*slick-track[^"']*["'][\s\S]*?<\/div>/i
+  ];
 
-  if (u.includes("cdn.myshoptet.com")) score += 30;
-  if (u.endsWith(".jpg") || u.endsWith(".jpeg") || u.endsWith(".png") || u.endsWith(".webp")) score += 10;
-  if (u.includes("og-image")) score += 20;
-  if (u.includes("product")) score += 10;
-  if (u.includes("thumb")) score -= 20;
-  if (u.includes("icon")) score -= 30;
-  if (u.includes("logo")) score -= 30;
-  if (u.includes("banner")) score -= 10;
-  if (u.includes("placeholder")) score -= 30;
-
-  for (const w of words) {
-    if (u.includes(w)) score += 3;
+  let galleryHtml = "";
+  for (const regex of galleryBlockRegexes) {
+    const m = html.match(regex);
+    if (m && m[0]) {
+      galleryHtml += " " + m[0];
+    }
   }
 
-  return score;
-}
+  if (!galleryHtml) {
+    const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
+    if (ogImage) {
+      const full = absolutizeUrl(ogImage, baseUrl);
+      return full ? [full] : [];
+    }
+    return [];
+  }
 
-function extractGalleryImages(html, baseUrl) {
-  const matches = [];
-  const regex = /<(meta|img)[^>]+(?:content|src)=["']([^"']+)["'][^>]*>/gi;
+  const imgRegex = /<(img|a)[^>]+(?:src|href|data-src|data-gallery-src)=["']([^"']+)["'][^>]*>/gi;
   let m;
 
-  while ((m = regex.exec(html)) !== null) {
+  while ((m = imgRegex.exec(galleryHtml)) !== null) {
     const raw = m[2] || "";
     if (!raw) continue;
 
@@ -279,35 +282,62 @@ function extractGalleryImages(html, baseUrl) {
     const lower = full.toLowerCase();
 
     if (
-      lower.includes(".jpg") ||
-      lower.includes(".jpeg") ||
-      lower.includes(".png") ||
-      lower.includes(".webp")
-    ) {
-      if (
-        lower.includes("cdn.myshoptet.com") ||
-        lower.includes("virivkyonline.sk") ||
-        lower.includes("myshoptet")
-      ) {
-        matches.push(full);
-      }
+      !lower.includes("cdn.myshoptet.com") &&
+      !lower.includes("myshoptet.com")
+    ) continue;
+
+    if (
+      !lower.includes(".jpg") &&
+      !lower.includes(".jpeg") &&
+      !lower.includes(".png") &&
+      !lower.includes(".webp")
+    ) continue;
+
+    if (
+      lower.includes("favicon") ||
+      lower.includes("logo") ||
+      lower.includes("icon") ||
+      lower.includes("placeholder") ||
+      lower.includes("gift") ||
+      lower.includes("house") ||
+      lower.includes("home") ||
+      lower.includes("badge") ||
+      lower.includes("cert") ||
+      lower.includes("filter") ||
+      lower.includes("spa-line") ||
+      lower.includes("chemia") ||
+      lower.includes("tablety")
+    ) continue;
+
+    results.push(full);
+  }
+
+  const unique = [...new Set(results)];
+
+  if (!unique.length) {
+    const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
+    if (ogImage) {
+      const full = absolutizeUrl(ogImage, baseUrl);
+      return full ? [full] : [];
     }
   }
 
-  return [...new Set(matches)];
+  return unique;
 }
 
 function pickBestImage(html, baseUrl, title) {
+  const gallery = extractGalleryImages(html, baseUrl);
+  if (gallery.length) {
+    return gallery[0];
+  }
+
   const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
   if (ogImage) {
     const full = absolutizeUrl(ogImage, baseUrl);
     if (full) return full;
   }
 
-  const images = extractGalleryImages(html, baseUrl);
-  if (!images.length) return "";
-
-  return images.sort((a, b) => scoreImageUrl(b, title) - scoreImageUrl(a, title))[0];
+  return "";
 }
 
 function findPriceInHtml(html) {
@@ -750,4 +780,6 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-                  }
+}
+
+
