@@ -13,6 +13,9 @@
       --title-text: #FFFFFF;
       --center-text: #F3F4F6;
       --accent-text: #D4AF37;
+      --button-bg: #D4AF37;
+      --button-text: #0B1320;
+      --button-hover: #F2D277;
     }
 
     * {
@@ -30,12 +33,13 @@
     }
 
     body {
-  background-image: url('bublinky.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-color: var(--bg-color);
-}
+      background-color: var(--bg-color);
+      /* Ak chces pozadie obrazkom, odkomentuj tieto riadky */
+      /* background-image: url('bublinky.png'); */
+      /* background-size: cover; */
+      /* background-position: center; */
+      /* background-repeat: no-repeat; */
+    }
 
     .page {
       min-height: 100vh;
@@ -81,6 +85,38 @@
       padding: 26px 18px;
       text-align: center;
       box-shadow: 0 10px 26px rgba(0,0,0,0.35);
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .nav-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 150px;
+      padding: 14px 20px;
+      border-radius: 14px;
+      border: none;
+      background: var(--button-bg);
+      color: var(--button-text);
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+      transition: transform 0.2s ease, background 0.2s ease;
+      cursor: pointer;
+    }
+
+    .nav-button:hover,
+    .nav-button:active {
+      background: var(--button-hover);
+      transform: translateY(-2px);
     }
 
     .center-panel h2 {
@@ -133,6 +169,17 @@
         padding: 36px 30px;
       }
 
+      .button-row {
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+
+      .nav-button {
+        min-width: 170px;
+        font-size: 18px;
+        padding: 16px 24px;
+      }
+
       .center-panel h2 {
         font-size: 32px;
       }
@@ -161,6 +208,12 @@
 
     <div class="content">
       <div class="center-panel">
+        <div class="button-row">
+          <a href="#" class="nav-button">Menu</a>
+          <a href="#" class="nav-button">Košík</a>
+          <a href="#" class="nav-button">Kontaktný formulár</a>
+        </div>
+
         <h2>Prečo si vybrať nás</h2>
 
         <p>
