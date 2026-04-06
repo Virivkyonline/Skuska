@@ -1,1 +1,197 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Platinum Lech Spa</title>
 
+  <style>
+    :root {
+      --bg-color: #0B1320;
+      --title-panel: #132844;
+      --center-panel: #1E3A5F;
+      --title-text: #FFFFFF;
+      --center-text: #F3F4F6;
+      --accent-text: #D4AF37;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--title-text);
+    }
+
+    body {
+      /* Ak chces obrazok pozadia, odkomentuj tieto 4 riadky */
+      /* background-image: url('bublinky.png'); */
+      /* background-size: cover; */
+      /* background-position: center; */
+      /* background-repeat: no-repeat; */
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title-panel {
+      width: 100%;
+      background: var(--title-panel);
+      text-align: center;
+      padding: 34px 16px 24px 16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    }
+
+    .title-panel h1 {
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: var(--title-text);
+      margin-bottom: 10px;
+    }
+
+    .title-panel p {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent-text);
+    }
+
+    .content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 14px;
+    }
+
+    .center-panel {
+      width: 100%;
+      max-width: 760px;
+      background: var(--center-panel);
+      border-radius: 24px;
+      padding: 26px 18px;
+      text-align: center;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.35);
+    }
+
+    .center-panel h2 {
+      font-size: 24px;
+      margin-bottom: 18px;
+      color: var(--title-text);
+    }
+
+    .center-panel p {
+      font-size: 17px;
+      line-height: 1.7;
+      color: var(--center-text);
+      margin-bottom: 16px;
+    }
+
+    .gold {
+      color: var(--accent-text);
+      font-weight: 700;
+    }
+
+    .logo-bottom {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      min-height: 120px;
+      padding: 8px 16px 24px 16px;
+    }
+
+    .logo-bottom img {
+      max-width: 240px;
+      width: 60%;
+      height: auto;
+      display: block;
+    }
+
+    @media (min-width: 700px) {
+      .title-panel {
+        padding: 42px 20px 30px 20px;
+      }
+
+      .title-panel h1 {
+        font-size: 48px;
+      }
+
+      .title-panel p {
+        font-size: 20px;
+      }
+
+      .center-panel {
+        padding: 36px 30px;
+      }
+
+      .center-panel h2 {
+        font-size: 32px;
+      }
+
+      .center-panel p {
+        font-size: 20px;
+      }
+
+      .logo-bottom {
+        min-height: 170px;
+      }
+
+      .logo-bottom img {
+        max-width: 320px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="title-panel">
+      <h1>PLATINUM LECH SPA</h1>
+      <p>KVALITNÉ VÍRIVKY NA PREDAJ</p>
+    </div>
+
+    <div class="content">
+      <div class="center-panel">
+        <h2>Prečo si vybrať nás</h2>
+
+        <p>
+          Objavte svet domáceho relaxu, kde sa pohodlie spája s moderným dizajnom,
+          spoľahlivosťou a dlhoročnými skúsenosťami.
+        </p>
+
+        <p>
+          Naše vírivky predávame pod vlastnou značkou
+          <span class="gold">Platinum Lech Spa</span>
+          s dôrazom na kvalitu, dlhú životnosť, spokojnosť zákazníkov
+          a profesionálny servis.
+        </p>
+
+        <p>
+          Volám sa <span class="gold">Stanislav Lech</span> a vírivkám sa venujem viac ako 15 rokov.
+          V podnikaní pôsobím viac ako 27 rokov, preto viem, že pri kúpe vírivky je dôležitý
+          nielen produkt, ale aj firma, na ktorú sa môžete spoľahnúť aj v budúcnosti.
+        </p>
+
+        <p>
+          U nás získate viac než len vírivku. Získate istotu, odborné poradenstvo,
+          záručný aj pozáručný servis a partnera pre váš vlastný wellness.
+        </p>
+      </div>
+    </div>
+
+    <div class="logo-bottom">
+      <img src="logo-gold.png" alt="Logo Platinum Lech Spa">
+    </div>
+
+  </div>
+</body>
+</html>
