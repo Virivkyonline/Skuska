@@ -14,6 +14,9 @@
       --center-text: #F3F4F6;
       --accent-text: #D4AF37;
       --button-text: #0B1320;
+      --menu-button-bg: #D4AF37;
+      --menu-sub-button-bg: #24466f;
+      --menu-sub-button-text: #FFFFFF;
     }
 
     * {
@@ -78,7 +81,9 @@
 
     .nav-buttons button,
     .form-buttons button,
-    .cart-buttons button {
+    .cart-buttons button,
+    .menu-main-button,
+    .subcategory-buttons button {
       width: 100%;
       padding: 14px;
       border: none;
@@ -86,9 +91,21 @@
       font-size: 16px;
       font-weight: 700;
       cursor: pointer;
-      background: var(--accent-text);
-      color: var(--button-text);
       box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+
+    .nav-buttons button,
+    .form-buttons button,
+    .cart-buttons button,
+    .menu-main-button {
+      background: var(--menu-button-bg);
+      color: var(--button-text);
+    }
+
+    .subcategory-buttons button {
+      background: var(--menu-sub-button-bg);
+      color: var(--menu-sub-button-text);
+      text-align: left;
     }
 
     .content {
@@ -182,6 +199,25 @@
       display: none;
     }
 
+    .menu-box {
+      margin-top: 22px;
+      text-align: left;
+    }
+
+    .menu-main-button {
+      margin-bottom: 14px;
+    }
+
+    .subcategory-buttons {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .subcategory-buttons.show {
+      display: flex;
+    }
+
     @media (min-width: 700px) {
       .title-panel {
         padding: 42px 20px 30px 20px;
@@ -267,6 +303,25 @@
             U nás získate viac než len vírivku. Získate istotu, odborné poradenstvo,
             záručný aj pozáručný servis a partnera pre váš vlastný wellness.
           </p>
+
+          <div class="menu-box">
+            <button class="menu-main-button" onclick="toggleSubcategories()">
+              MENU
+            </button>
+
+            <div id="subcategoryButtons" class="subcategory-buttons">
+              <button type="button">Akrylátová vírivka (Balboa vírivka)</button>
+              <button type="button">Dvojmiestna vírivka (vírivky pre dve osoby)</button>
+              <button type="button">Vírivka pre 4-5 osôb</button>
+              <button type="button">Vírivky pre 6 osôb</button>
+              <button type="button">Ochládzovacia kaďa do exteriéru či interiéru</button>
+              <button type="button">Doplnky a voliteľná výbava</button>
+              <button type="button">Swim spa bazén (protiprúd bazén)</button>
+              <button type="button">Bezchlórová chémia, filtre</button>
+              <button type="button">Kontajnerové stavby – chaty, garáže, unimobunky</button>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -322,6 +377,11 @@
       document.getElementById('contact-page').style.display = 'none';
       document.getElementById('cart-page').style.display = 'none';
       document.getElementById(pageId).style.display = 'block';
+    }
+
+    function toggleSubcategories() {
+      const box = document.getElementById('subcategoryButtons');
+      box.classList.toggle('show');
     }
 
     document.getElementById('contactForm').addEventListener('submit', async function(e) {
