@@ -47,12 +47,9 @@ async function handleFeedProxy(url, corsHeaders) {
       });
     }
 
-    const normalizedUrl = normalizeProductUrl(target);
-
-    const feedResponse = await fetch(normalizedUrl, {
+    const feedResponse = await fetch(target, {
       method: "GET",
-      redirect: "follow",
-      headers: browserHeaders(normalizedUrl),
+      headers: browserHeaders(target),
       cf: { cacheTtl: 0, cacheEverything: false }
     });
 
@@ -119,6 +116,7 @@ async function handleProductDetail(url, corsHeaders) {
             return jsonResponse(
               {
                 success: true,
+                workerVersion: "variant-fallback-v3",
                 product: data
               },
               200,
@@ -243,6 +241,47 @@ function parseProductHtml(html, productUrl) {
 
   let variants = extractVariants(cleanedHtml);
   variants = applyVariantFallbacks(productUrl, variants, title, description);
+
+  const joined = `${String(productUrl || "").toLowerCase()} ${String(title || "").toLowerCase()} ${String(description || "").toLowerCase()}`;
+
+  if (
+    joined.includes("zealux") ||
+    joined.includes("tepelne cerpadlo") ||
+    joined.includes("tepelné čerpadlo")
+  ) {
+    variants.generic = [
+      {
+        name: "Výkon",
+        values: [
+          "11KW (229/11K)",
+          "14KW (229/14K)",
+          "17KW (229/17K)",
+          "21KW (229/21K)",
+          "26KW (229/26K)",
+          "30KW (229/30K)"
+        ]
+      }
+    ];
+  }
+
+  if (
+    joined.includes("slnecnik") ||
+    joined.includes("slnečník") ||
+    joined.includes("konzolovy") ||
+    joined.includes("konzolový") ||
+    joined.includes("270 x 270")
+  ) {
+    variants.generic = [
+      {
+        name: "Farba",
+        values: [
+          "Antracit (232/ANT)",
+          "Šedá (232/SED)",
+          "Taupe (232/TAU)"
+        ]
+      }
+    ];
+  }
 
   return {
     url: productUrl,
@@ -983,4 +1022,4 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-      }
+  }
