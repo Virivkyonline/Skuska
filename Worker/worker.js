@@ -20,6 +20,14 @@ export default {
       return handleProductDetail(url, corsHeaders);
     }
 
+    if (request.method === "POST" && url.pathname === "/app-ping") {
+      return handleAppPing(request, env, corsHeaders);
+    }
+
+    if (request.method === "GET" && url.pathname === "/admin-stats") {
+      return handleAdminStats(url, env, corsHeaders);
+    }
+
     if (request.method === "POST" && url.pathname === "/order") {
       return handleOrder(request, env, corsHeaders);
     }
@@ -35,6 +43,9 @@ export default {
     );
   }
 };
+
+const ADMIN_PIN = "780801";
+const ENABLE_INSTALL_TRACKING = true;
 
 async function handleFeedProxy(url, corsHeaders) {
   try {
@@ -116,7 +127,7 @@ async function handleProductDetail(url, corsHeaders) {
             return jsonResponse(
               {
                 success: true,
-                workerVersion: "variant-fallback-v3",
+                workerVersion: "hidden-admin-v2",
                 product: data
               },
               200,
@@ -143,6 +154,174 @@ async function handleProductDetail(url, corsHeaders) {
       {
         success: false,
         error: "Chyba servera pri nacitani detailu produktu."
+      },
+      500,
+      corsHeaders
+    );
+  }
+}
+
+async function handleAppPing(request, env, corsHeaders) {
+  try {
+    if (!ENABLE_INSTALL_TRACKING) {
+      return jsonResponse({ success: true, disabled: true }, 200, corsHeaders);
+    }
+
+    if (!env.INSTALL_STATS) {
+      return jsonResponse(
+        { success: false, error: "Chyba: KV binding INSTALL_STATS nie je nastaveny." },
+        500,
+        corsHeaders
+      );
+    }
+
+    const data = await request.json();
+
+    const installId = String(data.installId || "").trim();
+    const appName = String(data.appName || "Platinum Lech Spa").trim();
+    const appVersion = String(data.appVersion || "1.0.0").trim();
+    const platform = String(data.platform || "").trim();
+    const userAgent = String(data.userAgent || "").trim();
+
+    if (!installId) {
+      return jsonResponse(
+        { success: false, error: "Chyba: installId chyba." },
+        400,
+        corsHeaders
+      );
+    }
+
+    const now = Date.now();
+    const today = new Date(now).toISOString().slice(0, 10);
+
+    const record = {
+      installId,
+      appName,
+      appVersion,
+      platform,
+      userAgent,
+      firstSeen: now,
+      lastSeen: now,
+      lastSeenDate: today
+    };
+
+    const key = "install:" + installId;
+    const existingRaw = await env.INSTALL_STATS.get(key);
+
+    if (existingRaw) {
+      try {
+        const existing = JSON.parse(existingRaw);
+        record.firstSeen = existing.firstSeen || now;
+      } catch (e) {}
+    }
+
+    await env.INSTALL_STATS.put(key, JSON.stringify(record));
+
+    return jsonResponse(
+      {
+        success: true,
+        tracked: true,
+        installId
+      },
+      200,
+      corsHeaders
+    );
+  } catch (e) {
+    return jsonResponse(
+      {
+        success: false,
+        error: "Chyba pri ukladani app aktivity."
+      },
+      500,
+      corsHeaders
+    );
+  }
+}
+
+async function handleAdminStats(url, env, corsHeaders) {
+  try {
+    const pin = String(url.searchParams.get("pin") || "").trim();
+
+    if (pin !== ADMIN_PIN) {
+      return jsonResponse(
+        { success: false, error: "Neplatny PIN." },
+        403,
+        corsHeaders
+      );
+    }
+
+    if (!env.INSTALL_STATS) {
+      return jsonResponse(
+        { success: false, error: "Chyba: KV binding INSTALL_STATS nie je nastaveny." },
+        500,
+        corsHeaders
+      );
+    }
+
+    const now = Date.now();
+    const oneDay = 24 * 60 * 60 * 1000;
+    const sevenDays = 7 * oneDay;
+    const thirtyDays = 30 * oneDay;
+    const oneEightyDays = 180 * oneDay;
+    const threeSixtyFiveDays = 365 * oneDay;
+
+    let cursor = undefined;
+    let total = 0;
+    let activeToday = 0;
+    let active7d = 0;
+    let active30d = 0;
+    let active180d = 0;
+    let active365d = 0;
+
+    do {
+      const list = await env.INSTALL_STATS.list({
+        prefix: "install:",
+        cursor
+      });
+
+      for (const item of list.keys) {
+        const raw = await env.INSTALL_STATS.get(item.name);
+        if (!raw) continue;
+
+        try {
+          const rec = JSON.parse(raw);
+          const lastSeen = Number(rec.lastSeen || 0);
+          if (!lastSeen) continue;
+
+          total += 1;
+
+          if (now - lastSeen <= oneDay) activeToday += 1;
+          if (now - lastSeen <= sevenDays) active7d += 1;
+          if (now - lastSeen <= thirtyDays) active30d += 1;
+          if (now - lastSeen <= oneEightyDays) active180d += 1;
+          if (now - lastSeen <= threeSixtyFiveDays) active365d += 1;
+        } catch (e) {}
+      }
+
+      cursor = list.list_complete ? undefined : list.cursor;
+    } while (cursor);
+
+    return jsonResponse(
+      {
+        success: true,
+        workerVersion: "hidden-admin-v2",
+        stats: {
+          totalInstalls: total,
+          activeToday,
+          active7d,
+          active30d,
+          active180d,
+          active365d
+        }
+      },
+      200,
+      corsHeaders
+    );
+  } catch (e) {
+    return jsonResponse(
+      {
+        success: false,
+        error: "Chyba pri nacitani admin statistik."
       },
       500,
       corsHeaders
