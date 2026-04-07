@@ -232,7 +232,9 @@ function parseProductHtml(html, productUrl) {
 
   const description = extractFullDescription(cleanedHtml, metaDescription);
   const shortDescription = buildShortDescription(description, metaDescription);
-  const variants = extractVariants(cleanedHtml);
+
+  let variants = extractVariants(cleanedHtml);
+  variants = applyVariantFallbacks(productUrl, variants);
 
   return {
     url: productUrl,
@@ -244,6 +246,51 @@ function parseProductHtml(html, productUrl) {
     description,
     variants
   };
+}
+
+function applyVariantFallbacks(productUrl, variants) {
+  const url = String(productUrl || "").toLowerCase();
+
+  const safeVariants = {
+    oblozenie: Array.isArray(variants?.oblozenie) ? variants.oblozenie : [],
+    akryl: Array.isArray(variants?.akryl) ? variants.akryl : [],
+    generic: Array.isArray(variants?.generic) ? variants.generic : []
+  };
+
+  const existingKeys = new Set(
+    safeVariants.generic.map(g => String(g?.name || "").toLowerCase().trim())
+  );
+
+  if (url.includes("/konzolovy-slnecnik-270-x-270--vratane-zakladne-na-zemi--antracit/")) {
+    if (!existingKeys.has("farba")) {
+      safeVariants.generic.push({
+        name: "Farba",
+        values: [
+          "Antracit (232/ANT)",
+          "Šedá (232/SED)",
+          "Taupe (232/TAU)"
+        ]
+      });
+    }
+  }
+
+  if (url.includes("/tepelne-cerpadlo-zealux/")) {
+    if (!existingKeys.has("výkon") && !existingKeys.has("vykon")) {
+      safeVariants.generic.push({
+        name: "Výkon",
+        values: [
+          "11KW (229/11K)",
+          "14KW (229/14K)",
+          "17KW (229/17K)",
+          "21KW (229/21K)",
+          "26KW (229/26K)",
+          "30KW (229/30K)"
+        ]
+      });
+    }
+  }
+
+  return safeVariants;
 }
 
 function removeScriptsAndStyles(html) {
@@ -910,4 +957,4 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-        }
+}
