@@ -835,6 +835,14 @@
       '26KW (229/26K)',
       '30KW (229/30K)'
     ];
+    const ZEALUX_PRICE_MAP = {
+  '11KW (229/11K)': 2465,
+  '14KW (229/14K)': 2695,
+  '17KW (229/17K)': 2895,
+  '21KW (229/21K)': 3295,
+  '26KW (229/26K)': 3695,
+  '30KW (229/30K)': 3995
+};
 
     const SLNECNIK_VARIANTS = [
       'Antracit (232/ANT)',
@@ -981,10 +989,23 @@
         .join(' | ');
     }
 
-    function resolveCurrentDetailPrice() {
-      if (!detailProduct) return 'Cena na vyžiadanie';
-      return priceToDisplay(detailProduct.price);
+   function resolveCurrentDetailPrice() {
+  if (!detailProduct) return 'Cena na vyžiadanie';
+
+  if (isZealux(detailProduct)) {
+    const selected = getSelectedGenericVariants();
+    const vykon = selected.find(
+      x => String(x.name).toLowerCase().includes('výkon') ||
+           String(x.name).toLowerCase().includes('vykon')
+    );
+
+    if (vykon && ZEALUX_PRICE_MAP[vykon.value]) {
+      return formatEur(ZEALUX_PRICE_MAP[vykon.value]);
     }
+  }
+
+  return priceToDisplay(detailProduct.price);
+}
 
     function updateDetailPriceBySelection() {
       if (!detailProduct) return;
