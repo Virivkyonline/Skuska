@@ -73,7 +73,7 @@
 
     .top-tabs {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 10px;
       padding: 14px 14px 0 14px;
       max-width: 1100px;
@@ -141,7 +141,8 @@
 
     #status-home,
     #status-detail,
-    #order-status {
+    #order-status,
+    #admin-status {
       margin-top: 10px;
       font-size: 15px;
       color: #FFFFFF;
@@ -393,6 +394,32 @@
       min-width: 120px;
     }
 
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .admin-stat {
+      background: var(--dark-card);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .admin-stat-title {
+      font-size: 14px;
+      color: var(--muted-text);
+      margin-bottom: 8px;
+    }
+
+    .admin-stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+    }
+
     .logo-bottom {
       display: flex;
       justify-content: center;
@@ -406,6 +433,7 @@
       width: 60%;
       height: auto;
       display: block;
+      cursor: pointer;
     }
 
     .toast {
@@ -433,6 +461,10 @@
     }
 
     @media (max-width: 520px) {
+      .top-tabs {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
       .top-tabs button {
         font-size: 13px;
         padding: 12px 6px;
@@ -464,6 +496,10 @@
         grid-template-columns: 380px 1fr;
       }
 
+      .admin-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
       .logo-bottom img {
         max-width: 320px;
       }
@@ -488,6 +524,7 @@
       <button id="tab-detail" type="button" onclick="showSection('detail')">Detail</button>
       <button id="tab-favorites" type="button" onclick="showSection('favorites'); renderFavorites();">Obľúbené</button>
       <button id="tab-cart" type="button" onclick="showSection('cart'); renderCart();">Košík</button>
+      <button id="tab-admin" type="button" onclick="showSection('admin')" style="display:none;">Admin</button>
     </div>
 
     <div class="content">
@@ -580,8 +617,49 @@
           <p id="order-status"></p>
         </section>
 
+        <section id="section-admin" class="page-section">
+          <h2>Admin štatistiky</h2>
+          <p id="admin-status">Skrytý admin panel.</p>
+
+          <div class="admin-grid">
+            <div class="admin-stat">
+              <div class="admin-stat-title">Celkom zariadení</div>
+              <div class="admin-stat-value" id="admin-total">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne dnes</div>
+              <div class="admin-stat-value" id="admin-today">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne 7 dní</div>
+              <div class="admin-stat-value" id="admin-7d">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne 30 dní</div>
+              <div class="admin-stat-value" id="admin-30d">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne 180 dní</div>
+              <div class="admin-stat-value" id="admin-180d">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne 365 dní</div>
+              <div class="admin-stat-value" id="admin-365d">0</div>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button class="btn secondary" type="button" onclick="showSection('home')">Späť</button>
+          </div>
+        </section>
+
         <div class="logo-bottom">
-          <img src="logo-gold.png" alt="Logo Platinum Lech Spa">
+          <img id="adminLogo" src="logo-gold.png" alt="Logo Platinum Lech Spa">
         </div>
       </div>
     </div>
@@ -591,6 +669,8 @@
 
   <script>
     const API_BASE = 'https://virivkyapp.lechstav.workers.dev';
+    const ADMIN_PIN = '780801';
+
     const PRODUCT_URLS = [
       'https://www.virivkyonline.sk/nahradna-ziarovka-pre-uv-lampu/',
       'https://www.virivkyonline.sk/termokryt-pre-virivku-zadanie-do-vyroby/',
@@ -615,9 +695,11 @@
     let products = [];
     let detailProduct = null;
     let toastTimeout = null;
+    let adminClickCount = 0;
+    let adminClickTimer = null;
 
     function showSection(name) {
-      const all = ['home', 'detail', 'favorites', 'cart'];
+      const all = ['home', 'detail', 'favorites', 'cart', 'admin'];
       all.forEach(section => {
         document.getElementById('section-' + section).classList.remove('active');
         const tab = document.getElementById('tab-' + section);
@@ -626,7 +708,9 @@
 
       document.getElementById('section-' + name).classList.add('active');
       const currentTab = document.getElementById('tab-' + name);
-      if (currentTab) currentTab.classList.add('active');
+      if (currentTab && currentTab.style.display !== 'none') {
+        currentTab.classList.add('active');
+      }
     }
 
     function showToast(message) {
@@ -666,6 +750,33 @@
 
     function sanitizeVariantName(name) {
       return String(name || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function getInstallId() {
+      let installId = localStorage.getItem('pls_install_id');
+      if (!installId) {
+        installId = 'install_' + Date.now() + '_' + Math.random().toString(36).slice(2, 12);
+        localStorage.setItem('pls_install_id', installId);
+      }
+      return installId;
+    }
+
+    async function sendAppPing() {
+      try {
+        await fetch(API_BASE + '/app-ping', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            installId: getInstallId(),
+            appName: 'Platinum Lech Spa',
+            appVersion: '1.0.0',
+            platform: navigator.platform || '',
+            userAgent: navigator.userAgent || ''
+          })
+        });
+      } catch (e) {}
     }
 
     async function fetchProductDetail(url) {
@@ -1150,6 +1261,69 @@
       showToast('Údaje zákazníka vymazané');
     }
 
+    async function loadAdminStats() {
+      const status = document.getElementById('admin-status');
+      status.textContent = 'Načítavam admin štatistiky...';
+
+      try {
+        const response = await fetch(
+          API_BASE + '/admin-stats?pin=' + encodeURIComponent(ADMIN_PIN) + '&_=' + Date.now(),
+          {
+            method: 'GET',
+            cache: 'no-store'
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success || !data.stats) {
+          alert('Nepodarilo sa načítať admin štatistiky.');
+          status.textContent = 'Chyba pri načítaní admin štatistík.';
+          return;
+        }
+
+        document.getElementById('admin-total').textContent = data.stats.totalInstalls || 0;
+        document.getElementById('admin-today').textContent = data.stats.activeToday || 0;
+        document.getElementById('admin-7d').textContent = data.stats.active7d || 0;
+        document.getElementById('admin-30d').textContent = data.stats.active30d || 0;
+        document.getElementById('admin-180d').textContent = data.stats.active180d || 0;
+        document.getElementById('admin-365d').textContent = data.stats.active365d || 0;
+
+        document.getElementById('tab-admin').style.display = 'block';
+        showSection('admin');
+        status.textContent = 'Admin štatistiky načítané.';
+      } catch (e) {
+        status.textContent = 'Chyba pri načítaní admin štatistík.';
+        alert('Chyba pri načítaní admin štatistík.');
+      }
+    }
+
+    function initHiddenAdmin() {
+      const logo = document.getElementById('adminLogo');
+      if (!logo) return;
+
+      logo.addEventListener('click', function() {
+        adminClickCount += 1;
+
+        if (adminClickTimer) clearTimeout(adminClickTimer);
+
+        adminClickTimer = setTimeout(() => {
+          adminClickCount = 0;
+        }, 1800);
+
+        if (adminClickCount >= 5) {
+          adminClickCount = 0;
+
+          const entered = prompt('Zadaj admin PIN');
+          if (entered === ADMIN_PIN) {
+            loadAdminStats();
+          } else if (entered !== null) {
+            alert('Nesprávny PIN');
+          }
+        }
+      });
+    }
+
     document.getElementById('orderForm').addEventListener('submit', async function(e) {
       e.preventDefault();
 
@@ -1210,7 +1384,7 @@
             email,
             phone: phoneClean,
             street,
-            houseNumber,
+            houseNumber: houseNumber,
             zip: zipClean,
             city,
             note,
@@ -1234,10 +1408,12 @@
       }
     });
 
+    sendAppPing();
     loadProducts();
     renderCart();
     renderFavorites();
     fillCustomerData();
+    initHiddenAdmin();
   </script>
 </body>
 </html>
