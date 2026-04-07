@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Platinum Lech Spa</title>
+
+  <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+    <rect width="192" height="192" rx="36" fill="%23caa74a"/>
+    <text x="96" y="112" text-anchor="middle" font-size="70" font-family="Arial" font-weight="700" fill="white">PLS</text>
+  </svg>'>
+
+  <meta name="theme-color" content="#caa74a">
+
+  <style>
+    * { box-sizing: border-box; }
+
+    :root{
+      --bg1:#07111f;
+      --bg2:#0d1d35;
+      --card:#12243d;
+      --card2:#17304f;
+      --gold:#caa74a;
+      --gold2:#e7c56a;
+      --text:#fff;
+      --muted:#bac6d8;
+      --shadow:0 10px 24px rgba(0,0,0,.28);
+      --radius:22px;
+    }
+
+    body{
+      margin:0;
+      font-family:Arial,sans-serif;
+      color:var(--text);
+      min-height:100vh;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(202,167,74,.18), transparent 20%),
+        radial-gradient(circle at 90% 0%, rgba(78,163,255,.16), transparent 24%),
+        linear-gradient(180deg,var(--bg2),var(--bg1));
+    }
+
+    .app{
+      width:100%;
+      max-width:430px;
+      margin:0 auto;
+      min-height:100vh;
+      padding:16px 14px 30px;
+    }
+
+    .hidden{ display:none !important; }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:16px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+
+    .logo{
+      width:52px;
+      height:52px;
+      border-radius:16px;
+      background:linear-gradient(135deg,var(--gold2),#8e6a18);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:700;
+      font-size:18px;
+      box-shadow:var(--shadow);
+    }
+
+    .brand h1{
+      margin:0;
+      font-size:20px;
+    }
+
+    .brand p{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .icon-btn,.back-btn{
+      border:none;
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      width:46px;
+      height:46px;
+      border-radius:15px;
+      cursor:pointer;
+      font-size:22px;
+      box-shadow:var(--shadow);
+      flex-shrink:0;
+    }
+
+    .hero{
+      background:linear-gradient(135deg, rgba(202,167,74,.17), rgba(78,163,255,.12));
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--shadow);
+      margin-bottom:14px;
+    }
+
+    .hero h2{
+      margin:0 0 8px;
+      font-size:24px;
+    }
+
+    .hero p{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.5;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+      margin-bottom:16px;
+    }
+
+    .tile{
+      background:linear-gradient(180deg,var(--card2),var(--card));
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,.06);
+      padding:16px;
+      min-height:118px;
+      box-shadow:var(--shadow);
+      cursor:pointer;
+    }
+
+    .tile .emoji{
+      display:block;
+      font-size:28px;
+      margin-bottom:8px;
+    }
+
+    .tile h3{
+      margin:0 0 6px;
+      font-size:17px;
+    }
+
+    .tile p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    .card{
+      background:linear-gradient(180deg,var(--card2),var(--card));
+      border-radius:20px;
+      border:1px solid rgba(255,255,255,.06);
+      padding:14px;
+      box-shadow:var(--shadow);
+      margin-bottom:12px;
+    }
+
+    .section-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin:10px 0;
+    }
+
+    .section-title h3{
+      margin:0;
+      font-size:18px;
+    }
+
+    .section-title span{
+      color:var(--gold2);
+      font-size:13px;
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+    }
+
+    .stat{
+      background:rgba(255,255,255,.05);
+      border-radius:18px;
+      padding:14px;
+    }
+
+    .stat .label{
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:7px;
+    }
+
+    .stat .value{
+      font-size:24px;
+      font-weight:700;
+    }
+
+    .stat .mini{
+      margin-top:5px;
+      color:var(--gold2);
+      font-size:12px;
+    }
+
+    .header-row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:14px;
+    }
+
+    .header-row h2{
+      margin:0;
+      font-size:22px;
+    }
+
+    .sub{
+      color:var(--muted);
+      font-size:13px;
+      margin-top:4px;
+    }
+
+    .product-list{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .product-card{
+      background:linear-gradient(180deg,var(--card2),var(--card));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:22px;
+      overflow:hidden;
+      box-shadow:var(--shadow);
+      cursor:pointer;
+    }
+
+    .product-image{
+      height:150px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .product-image::after{
+      content:"";
+      position:absolute;
+      width:120px;
+      height:54px;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      border-radius:28px;
+      background:rgba(255,255,255,.18);
+      box-shadow:0 0 0 11px rgba(255,255,255,.05);
+    }
+
+    .product-body{
+      padding:14px;
+    }
+
+    .product-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+    }
+
+    .product-top h4{
+      margin:0;
+      font-size:18px;
+    }
+
+    .price{
+      color:var(--gold2);
+      font-weight:700;
+      white-space:nowrap;
+    }
+
+    .product-body p{
+      margin:7px 0 10px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
+    }
+
+    .tags{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .tag{
+      background:rgba(255,255,255,.06);
+      border-radius:999px;
+      padding:7px 10px;
+      font-size:12px;
+      color:#e2ebf7;
+    }
+
+    .choice-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+    }
+
+    .choice-card{
+      background:linear-gradient(180deg,var(--card2),var(--card));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:20px;
+      overflow:hidden;
+      box-shadow:var(--shadow);
+      cursor:pointer;
+    }
+
+    .choice-img{
+      height:95px;
+    }
+
+    .choice-body{
+      padding:12px;
+    }
+
+    .choice-body h4{
+      margin:0 0 6px;
+      font-size:15px;
+    }
+
+    .choice-body p{
+      margin:0;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
+    }
+
+    .selected-box{
+      margin-bottom:14px;
+      border-radius:18px;
+      padding:14px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      line-height:1.5;
+      font-size:14px;
+    }
+
+    .action-row{
+      display:flex;
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .btn{
+      flex:1;
+      border:none;
+      border-radius:16px;
+      padding:14px 16px;
+      font-size:15px;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg,var(--gold2),var(--gold));
+      color:#201809;
+    }
+
+    .btn-secondary{
+      background:rgba(255,255,255,.08);
+      color:#fff;
+    }
+
+    .setting-item{
+      background:rgba(255,255,255,.05);
+      border-radius:18px;
+      padding:14px;
+      margin-bottom:10px;
+    }
+
+    .setting-item h4{
+      margin:0 0 6px;
+      font-size:15px;
+    }
+
+    .setting-item p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- HOME -->
+    <section id="screen-home">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logo">PLS</div>
+          <div>
+            <h1>Platinum Lech Spa</h1>
+            <p>Hlavný panel aplikácie</p>
+          </div>
+        </div>
+        <button class="icon-btn" onclick="showScreen('screen-settings')">⚙️</button>
+      </div>
+
+      <div class="hero">
+        <h2>Hlavný panel</h2>
+        <p>Kliknite na Produkty a zobrazia sa všetky karty víriviek. Pri každej vírivke už fungujú varianty obloženia aj farby akrylu.</p>
+      </div>
+
+      <div class="grid">
+        <div class="tile" onclick="showScreen('screen-products')">
+          <span class="emoji">🛁</span>
+          <h3>Produkty</h3>
+          <p>Všetky vírivky a ich varianty.</p>
+        </div>
+
+        <div class="tile" onclick="showScreen('screen-stats')">
+          <span class="emoji">📊</span>
+          <h3>Štatistiky</h3>
+          <p>Počet modelov a kombinácií.</p>
+        </div>
+
+        <div class="tile" onclick="showScreen('screen-settings')">
+          <span class="emoji">⚙️</span>
+          <h3>Nastavenia</h3>
+          <p>Základné nastavenia aplikácie.</p>
+        </div>
+
+        <div class="tile" onclick="showScreen('screen-products')">
+          <span class="emoji">✨</span>
+          <h3>Varianty</h3>
+          <p>Obloženia a akrylové farby.</p>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <h3>Rýchly prehľad</h3>
+        <span>PLS</span>
+      </div>
+
+      <div class="card">
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Modely</div>
+            <div class="value" id="homeModels">0</div>
+            <div class="mini">Celkom víriviek</div>
+          </div>
+          <div class="stat">
+            <div class="label">Obloženia</div>
+            <div class="value" id="homeCladdings">0</div>
+            <div class="mini">Typy panelov</div>
+          </div>
+          <div class="stat">
+            <div class="label">Farby akrylu</div>
+            <div class="value" id="homeColors">0</div>
+            <div class="mini">Dostupné farby</div>
+          </div>
+          <div class="stat">
+            <div class="label">Stav</div>
+            <div class="value">OK</div>
+            <div class="mini">Funkčné</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section id="screen-products" class="hidden">
+      <div class="header-row">
+        <button class="back-btn" onclick="showScreen('screen-home')">←</button>
+        <div>
+          <h2>Produkty</h2>
+          <div class="sub">Klikni na kartu vírivky</div>
+        </div>
+      </div>
+
+      <div id="productList" class="product-list"></div>
+    </section>
+
+    <!-- DETAIL / CLADDING -->
+    <section id="screen-detail" class="hidden">
+      <div class="header-row">
+        <button class="back-btn" onclick="showScreen('screen-products')">←</button>
+        <div>
+          <h2 id="detailTitle">Model</h2>
+          <div class="sub">Najprv vyber obloženie</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="product-image" id="detailImage"></div>
+        <div style="margin-top:12px;">
+          <strong id="detailPrice">0 €</strong>
+          <div class="sub" id="detailDesc">Popis</div>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <h3>Varianty obloženia</h3>
+        <span>1. krok</span>
+      </div>
+
+      <div id="claddingGrid" class="choice-grid"></div>
+    </section>
+
+    <!-- COLORS -->
+    <section id="screen-colors" class="hidden">
+      <div class="header-row">
+        <button class="back-btn" onclick="showScreen('screen-detail')">←</button>
+        <div>
+          <h2 id="colorsTitle">Farby akrylu</h2>
+          <div class="sub">Potom vyber farbu akrylu</div>
+        </div>
+      </div>
+
+      <div class="selected-box" id="selectedCladdingBox"></div>
+
+      <div class="section-title">
+        <h3>Farby akrylu</h3>
+        <span>2. krok</span>
+      </div>
+
+      <div id="colorGrid" class="choice-grid"></div>
+    </section>
+
+    <!-- SUMMARY -->
+    <section id="screen-summary" class="hidden">
+      <div class="header-row">
+        <button class="back-btn" onclick="showScreen('screen-colors')">←</button>
+        <div>
+          <h2>Vybraný variant</h2>
+          <div class="sub">Finálny prehľad</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 id="summaryModel" style="margin-top:0;">Model</h3>
+        <p id="summaryPrice" class="sub"></p>
+        <div class="selected-box" id="summaryBox"></div>
+
+        <div class="action-row">
+          <button class="btn btn-secondary" onclick="showScreen('screen-products')">Ďalší model</button>
+          <button class="btn btn-primary" onclick="showScreen('screen-home')">Hlavný panel</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section id="screen-stats" class="hidden">
+      <div class="header-row">
+        <button class="back-btn" onclick="showScreen('screen-home')">←</button>
+        <div>
+          <h2>Štatistiky</h2>
+          <div class="sub">Prehľad aplikácie</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="stats">
+          <div class="stat">
+            <div class="label">Počet modelov</div>
+            <div class="value" id="statModels">0</div>
+            <div class="mini">Vírivky</div>
+          </div>
+          <div class="stat">
+            <div class="label">Počet obložení</div>
+            <div class="value" id="statCladdings">0</div>
+            <div class="mini">Varianty panelov</div>
+          </div>
+          <div class="stat">
+            <div class="label">Počet farieb</div>
+            <div class="value" id="statColors">0</div>
+            <div class="mini">Akryly</div>
+          </div>
+          <div class="stat">
+            <div class="label">Kombinácie</div>
+            <div class="value" id="statCombos">0</div>
+            <div class="mini">Možnosti spolu</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="screen-settings" class="hidden">
+      <div class="header-row">
+        <button class="back-btn" onclick="showScreen('screen-home')">←</button>
+        <div>
+          <h2>Nastavenia</h2>
+          <div class="sub">Návrat funguje</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="setting-item">
+          <h4>Názov aplikácie</h4>
+          <p>Platinum Lech Spa</p>
+        </div>
+
+        <div class="setting-item">
+          <h4>Farba aplikácie</h4>
+          <p>Zlatá / tmavomodrá</p>
+        </div>
+
+        <div class="setting-item">
+          <h4>Produkty</h4>
+          <p>Každá karta vírivky obsahuje vlastné varianty obloženia a farby akrylu.</p>
+        </div>
+
+        <div class="action-row">
+          <button class="btn btn-secondary" onclick="showScreen('screen-home')">Späť</button>
+          <button class="btn btn-primary" onclick="showScreen('screen-products')">Produkty</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    const products = [
+      {
+        id: 1,
+        name: "Aurora",
+        price: "4 499 €",
+        desc: "Luxusná rodinná vírivka s pohodlným sedením.",
+        image: "linear-gradient(135deg,#547fb1,#233958 60%,#0f1824)",
+        tags: ["5 osôb","LED","Masáž"],
+        claddings: [
+          { name: "Sivé obloženie", desc: "Moderný sivý dekor.", bg: "linear-gradient(135deg,#9aa1ab,#666f79)" },
+          { name: "Hnedé obloženie", desc: "Prírodný drevený vzhľad.", bg: "linear-gradient(135deg,#8f6748,#5a3b28)" },
+          { name: "Čierne obloženie", desc: "Luxusný tmavý variant.", bg: "linear-gradient(135deg,#4c4c4c,#171717)" },
+          { name: "Svetlé obloženie", desc: "Čistý elegantný štýl.", bg: "linear-gradient(135deg,#ddd7cb,#a79e91)" }
+        ],
+        acrylics: [
+          { name: "Biela", color: "#f5f5f5" },
+          { name: "Perlová", color: "#e8e3d8" },
+          { name: "Strieborná", color: "#bfc6cf" },
+          { name: "Tmavosivá", color: "#6e7680" },
+          { name: "Midnight", color: "#232833" }
+        ]
+      },
+      {
+        id: 2,
+        name: "Split",
+        price: "4 299 €",
+        desc: "Obľúbený model s výborným pomerom ceny a výbavy.",
+        image: "linear-gradient(135deg,#8a6b3e,#4d3620 60%,#16100b)",
+        tags: ["4 osoby","Balboa","Filtrácia"],
+        claddings: [
+          { name: "Zlatohnedé obloženie", desc: "Teplý prémiový dekor.", bg: "linear-gradient(135deg,#b98b46,#714c20)" },
+          { name: "Grafitové obloženie", desc: "Moderný tmavý panel.", bg: "linear-gradient(135deg,#5d6269,#282d31)" },
+          { name: "Orech", desc: "Klasický drevený vzhľad.", bg: "linear-gradient(135deg,#7e5433,#4e311d)" },
+          { name: "Svetlosivé", desc: "Minimalistický vzhľad.", bg: "linear-gradient(135deg,#bcc2ca,#868e98)" }
+        ],
+        acrylics: [
+          { name: "Biela", color: "#fafafa" },
+          { name: "Sand", color: "#d8cfbc" },
+          { name: "Pearl", color: "#ece8e1" },
+          { name: "Smoke", color: "#99a1ab" },
+          { name: "Black Pearl", color: "#20242b" }
+        ]
+      },
+      {
+        id: 3,
+        name: "Titan",
+        price: "5 190 €",
+        desc: "Priestranný model s výkonnou masážou.",
+        image: "linear-gradient(135deg,#4f668d,#24334c 60%,#101923)",
+        tags: ["6 osôb","WiFi","Premium"],
+        claddings: [
+          { name: "Tmavý orech", desc: "Výrazný drevený dekor.", bg: "linear-gradient(135deg,#6d4a2e,#392111)" },
+          { name: "Antracit", desc: "Tmavý moderný variant.", bg: "linear-gradient(135deg,#666c74,#262b31)" },
+          { name: "Piesková", desc: "Jemný svetlý dekor.", bg: "linear-gradient(135deg,#cab18b,#9c7b4f)" },
+          { name: "Betón sivý", desc: "Industriálny štýl.", bg: "linear-gradient(135deg,#9ba2aa,#687079)" }
+        ],
+        acrylics: [
+          { name: "Arctic White", color: "#f6f7f7" },
+          { name: "Ivory", color: "#efe9dc" },
+          { name: "Sterling", color: "#b6bec9" },
+          { name: "Storm", color: "#707983" },
+          { name: "Onyx", color: "#1f2328" }
+        ]
+      },
+      {
+        id: 4,
+        name: "Royal",
+        price: "5 690 €",
+        desc: "Luxusný model pre náročného zákazníka.",
+        image: "linear-gradient(135deg,#92784b,#4b3719 60%,#171107)",
+        tags: ["5 osôb","LED","Aroma"],
+        claddings: [
+          { name: "Luxury Brown", desc: "Prémiový teplý dekor.", bg: "linear-gradient(135deg,#a17747,#5b381a)" },
+          { name: "Deep Black", desc: "Silný tmavý vzhľad.", bg: "linear-gradient(135deg,#393939,#111)" },
+          { name: "Silver Grey", desc: "Moderný jemný tón.", bg: "linear-gradient(135deg,#c2c7ce,#8d9299)" },
+          { name: "Champagne", desc: "Svetlý luxusný odtieň.", bg: "linear-gradient(135deg,#dfd1b2,#a99163)" }
+        ],
+        acrylics: [
+          { name: "Snow", color: "#fbfbfb" },
+          { name: "Champagne", color: "#e6dcc3" },
+          { name: "Silver", color: "#bcc4ce" },
+          { name: "Graphite", color: "#59616a" },
+          { name: "Night", color: "#191d23" }
+        ]
+      },
+      {
+        id: 5,
+        name: "Diamond",
+        price: "5 990 €",
+        desc: "Prémiová vírivka s reprezentatívnym vzhľadom.",
+        image: "linear-gradient(135deg,#5e7ea7,#23364e 60%,#101923)",
+        tags: ["6 osôb","Premium","Komfort"],
+        claddings: [
+          { name: "Walnut", desc: "Klasický elegantný dekor.", bg: "linear-gradient(135deg,#876040,#4f2f1b)" },
+          { name: "Modern Grey", desc: "Univerzálne moderné obloženie.", bg: "linear-gradient(135deg,#a1a8b0,#676f78)" },
+          { name: "Black Edition", desc: "Tmavý prémiový variant.", bg: "linear-gradient(135deg,#444,#111)" },
+          { name: "Sand Wood", desc: "Svetlý čistý dekor.", bg: "linear-gradient(135deg,#dbc49c,#9d8157)" }
+        ],
+        acrylics: [
+          { name: "White", color: "#f8f8f8" },
+          { name: "Pearl Sand", color: "#ddd1b8" },
+          { name: "Ice Grey", color: "#bcc3cb" },
+          { name: "Slate", color: "#67707a" },
+          { name: "Black", color: "#171a1f" }
+        ]
+      }
+    ];
+
+    let currentProduct = null;
+    let currentCladding = null;
+    let currentAcrylic = null;
+
+    function showScreen(id){
+      document.querySelectorAll("section").forEach(section => {
+        section.classList.add("hidden");
+      });
+      document.getElementById(id).classList.remove("hidden");
+    }
+
+    function renderProducts(){
+      const list = document.getElementById("productList");
+      list.innerHTML = "";
+
+      products.forEach(product => {
+        const card = document.createElement("div");
+        card.className = "product-card";
+        card.onclick = () => openProduct(product.id);
+
+        card.innerHTML = `
+          <div class="product-image" style="background:${product.image}"></div>
+          <div class="product-body">
+            <div class="product-top">
+              <h4>${product.name}</h4>
+              <div class="price">${product.price}</div>
+            </div>
+            <p>${product.desc}</p>
+            <div class="tags">
+              ${product.tags.map(tag => `<span class="tag">${tag}</span>`).join("")}
+            </div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function openProduct(id){
+      const product = products.find(p => p.id === id);
+      if(!product) return;
+
+      currentProduct = product;
+      currentCladding = null;
+      currentAcrylic = null;
+
+      document.getElementById("detailTitle").textContent = product.name;
+      document.getElementById("detailPrice").textContent = product.price;
+      document.getElementById("detailDesc").textContent = product.desc;
+      document.getElementById("detailImage").style.background = product.image;
+
+      const claddingGrid = document.getElementById("claddingGrid");
+      claddingGrid.innerHTML = "";
+
+      product.claddings.forEach(cladding => {
+        const card = document.createElement("div");
+        card.className = "choice-card";
+        card.onclick = () => selectCladding(cladding);
+
+        card.innerHTML = `
+          <div class="choice-img" style="background:${cladding.bg}"></div>
+          <div class="choice-body">
+            <h4>${cladding.name}</h4>
+            <p>${cladding.desc}</p>
+          </div>
+        `;
+        claddingGrid.appendChild(card);
+      });
+
+      showScreen("screen-detail");
+    }
+
+    function selectCladding(cladding){
+      currentCladding = cladding;
+
+      document.getElementById("colorsTitle").textContent = currentProduct.name + " - farba akrylu";
+      document.getElementById("selectedCladdingBox").innerHTML = `
+        <strong>Vybrané obloženie:</strong> ${cladding.name}<br>
+        <span style="color:#bac6d8">${cladding.desc}</span>
+      `;
+
+      const colorGrid = document.getElementById("colorGrid");
+      colorGrid.innerHTML = "";
+
+      currentProduct.acrylics.forEach(acrylic => {
+        const card = document.createElement("div");
+        card.className = "choice-card";
+        card.onclick = () => selectAcrylic(acrylic);
+
+        card.innerHTML = `
+          <div class="choice-img" style="background:${acrylic.color}"></div>
+          <div class="choice-body">
+            <h4>${acrylic.name}</h4>
+            <p>Akrylová farba vírivky</p>
+          </div>
+        `;
+        colorGrid.appendChild(card);
+      });
+
+      showScreen("screen-colors");
+    }
+
+    function selectAcrylic(acrylic){
+      currentAcrylic = acrylic;
+
+      document.getElementById("summaryModel").textContent = currentProduct.name;
+      document.getElementById("summaryPrice").textContent = "Cena modelu: " + currentProduct.price;
+      document.getElementById("summaryBox").innerHTML = `
+        <strong>Model:</strong> ${currentProduct.name}<br><br>
+        <strong>Obloženie:</strong> ${currentCladding.name}<br>
+        <strong>Farba akrylu:</strong> ${currentAcrylic.name}<br><br>
+        <strong>Popis:</strong> ${currentProduct.desc}
+      `;
+
+      showScreen("screen-summary");
+    }
+
+    function renderStats(){
+      const modelCount = products.length;
+      const allCladdings = new Set();
+      const allColors = new Set();
+      let combinations = 0;
+
+      products.forEach(product => {
+        product.claddings.forEach(item => allCladdings.add(item.name));
+        product.acrylics.forEach(item => allColors.add(item.name));
+        combinations += product.claddings.length * product.acrylics.length;
+      });
+
+      document.getElementById("homeModels").textContent = modelCount;
+      document.getElementById("homeCladdings").textContent = allCladdings.size;
+      document.getElementById("homeColors").textContent = allColors.size;
+
+      document.getElementById("statModels").textContent = modelCount;
+      document.getElementById("statCladdings").textContent = allCladdings.size;
+      document.getElementById("statColors").textContent = allColors.size;
+      document.getElementById("statCombos").textContent = combinations;
+    }
+
+    renderProducts();
+    renderStats();
+    showScreen("screen-home");
+  </script>
+</body>
+  </html>
