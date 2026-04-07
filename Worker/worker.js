@@ -5,7 +5,7 @@ export default {
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Cache-Control, Pragma"
+      "Access-Control-Allow-Headers": "Content-Type"
     };
 
     if (request.method === "OPTIONS") {
@@ -16,16 +16,8 @@ export default {
       return handleFeedProxy(url, corsHeaders);
     }
 
-    if (request.method === "GET" && (url.pathname === "/product-detail" || url.pathname === "/pr")) {
+    if (request.method === "GET" && url.pathname === "/product-detail") {
       return handleProductDetail(url, corsHeaders);
-    }
-
-    if (request.method === "POST" && url.pathname === "/app-ping") {
-      return handleAppPing(request, env, corsHeaders);
-    }
-
-    if (request.method === "GET" && (url.pathname === "/admin-stats" || url.pathname === "/ac")) {
-      return handleAdminStats(url, env, corsHeaders);
     }
 
     if (request.method === "POST" && url.pathname === "/order") {
@@ -36,43 +28,18 @@ export default {
       return handleContactForm(request, env, corsHeaders);
     }
 
-    return jsonResponse(
-      { success: false, error: "Pouzi GET alebo POST." },
-      405,
-      corsHeaders
+    return new Response(
+      JSON.stringify({ success: false, error: "Pouzi GET alebo POST." }),
+      {
+        status: 405,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders
+        }
+      }
     );
   }
 };
-
-const ADMIN_PIN = "780801";
-const ENABLE_INSTALL_TRACKING = true;
-
-const HOT_TUB_OBLOZENIE = ["HNEDÁ", "ANTRACIT", "ŠEDÁ"];
-const HOT_TUB_AKRYL = [
-  "Gypsum",
-  "Mayan Cooper",
-  "Midnight opal",
-  "Ocean wave",
-  "Odysey",
-  "Oyster opal",
-  "Sahara",
-  "Silver white marble"
-];
-
-const ZEALUX_VARIANTS = [
-  "11KW (229/11K)",
-  "14KW (229/14K)",
-  "17KW (229/17K)",
-  "21KW (229/21K)",
-  "26KW (229/26K)",
-  "30KW (229/30K)"
-];
-
-const SLNECNIK_VARIANTS = [
-  "Antracit (232/ANT)",
-  "Šedá (232/SED)",
-  "Taupe (232/TAU)"
-];
 
 async function handleFeedProxy(url, corsHeaders) {
   try {
@@ -85,10 +52,14 @@ async function handleFeedProxy(url, corsHeaders) {
       });
     }
 
-    const feedResponse = await fetch(target, {
+    const targetUrl = new URL(target);
+
+    const feedResponse = await fetch(targetUrl.toString(), {
       method: "GET",
-      headers: browserHeaders(target),
-      cf: { cacheTtl: 0, cacheEverything: false }
+      headers: {
+        "User-Agent": "Mozilla/5.0 PlatinumLechSpaApp/1.0",
+        "Accept-Language": "sk-SK,sk;q=0.9,en;q=0.8"
+      }
     });
 
     const text = await feedResponse.text();
@@ -97,19 +68,13 @@ async function handleFeedProxy(url, corsHeaders) {
       status: feedResponse.ok ? 200 : feedResponse.status,
       headers: {
         "Content-Type": "application/xml; charset=utf-8",
-        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-        "Pragma": "no-cache",
         ...corsHeaders
       }
     });
   } catch (e) {
     return new Response("Feed proxy error", {
       status: 500,
-      headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-        "Pragma": "no-cache",
-        ...corsHeaders
-      }
+      headers: corsHeaders
     });
   }
 }
@@ -126,54 +91,54 @@ async function handleProductDetail(url, corsHeaders) {
       );
     }
 
-    const normalizedUrl = normalizeProductUrl(target);
-    const variantsToTry = buildUrlVariants(normalizedUrl);
-
-    let lastStatus = 0;
-    let lastText = "";
-    let lastUrlUsed = normalizedUrl;
-    let lastError = "";
-
-    for (const tryUrl of variantsToTry) {
-      try {
-        const response = await fetch(tryUrl, {
-          method: "GET",
-          redirect: "follow",
-          headers: browserHeaders(tryUrl),
-          cf: { cacheTtl: 0, cacheEverything: false }
-        });
-
-        const text = await response.text();
-        lastStatus = response.status;
-        lastText = text;
-        lastUrlUsed = tryUrl;
-
-        const product = safeParseProductHtml(text, tryUrl);
-
-        return jsonResponse(
-          {
-            success: true,
-            workerVersion: "safe-parser-v2",
-            product
-          },
-          200,
-          corsHeaders
-        );
-      } catch (err) {
-        lastError = String(err && err.message ? err.message : err || "");
-      }
+    let targetUrl;
+    try {
+      targetUrl = new URL(target);
+    } catch {
+      return jsonResponse(
+        { success: false, error: "Neplatna URL adresa produktu." },
+        400,
+        corsHeaders
+      );
     }
+
+    if (!/virivkyonline\.sk$/i.test(targetUrl.hostname)) {
+      return jsonResponse(
+        { success: false, error: "Povolena je iba domena virivkyonline.sk." },
+        400,
+        corsHeaders
+      );
+    }
+
+    const productResponse = await fetch(targetUrl.toString(), {
+      method: "GET",
+      headers: {
+        "User-Agent": "Mozilla/5.0 PlatinumLechSpaApp/1.0",
+        "Accept-Language": "sk-SK,sk;q=0.9,en;q=0.8"
+      }
+    });
+
+    if (!productResponse.ok) {
+      return jsonResponse(
+        {
+          success: false,
+          error: "Nepodarilo sa nacitat stranku produktu.",
+          detail: "HTTP " + productResponse.status
+        },
+        productResponse.status,
+        corsHeaders
+      );
+    }
+
+    const html = await productResponse.text();
+    const data = parseProductHtml(html, targetUrl.toString());
 
     return jsonResponse(
       {
-        success: false,
-        error: "Nepodarilo sa nacitat stranku produktu.",
-        detail: "HTTP " + (lastStatus || 0),
-        debugUrl: lastUrlUsed,
-        debugError: lastError,
-        debugSnippet: stripTags(lastText || "").slice(0, 500)
+        success: true,
+        product: data
       },
-      500,
+      200,
       corsHeaders
     );
   } catch (e) {
@@ -188,309 +153,43 @@ async function handleProductDetail(url, corsHeaders) {
   }
 }
 
-function safeParseProductHtml(html, productUrl) {
-  const cleanedHtml = removeScriptsAndStyles(html || "");
+function parseProductHtml(html, productUrl) {
+  const cleanedHtml = removeScriptsAndStyles(html);
 
-  let title = "";
-  let metaDescription = "";
-  let gallery = [];
-  let mainImage = "";
-  let price = "";
-  let description = "";
-  let shortDescription = "";
-  let variants = { oblozenie: [], akryl: [], generic: [] };
-
-  try {
-    title = decodeHtmlEntities(
+  const title =
+    decodeHtmlEntities(
       firstMatch(cleanedHtml, /<h1[^>]*>([\s\S]*?)<\/h1>/i) ||
       firstMatch(cleanedHtml, /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"]+)["']/i) ||
       firstMatch(cleanedHtml, /<title[^>]*>([\s\S]*?)<\/title>/i) ||
       "Produkt"
     ).trim();
-  } catch (e) {
-    title = "Produkt";
-  }
 
-  try {
-    metaDescription = decodeHtmlEntities(
-      firstMatch(cleanedHtml, /<meta[^>]+name=["']description["'][^>]+content=["']([^"]+)["']/i) || ""
-    ).trim();
-  } catch (e) {
-    metaDescription = "";
-  }
+  const metaDescription = decodeHtmlEntities(
+    firstMatch(cleanedHtml, /<meta[^>]+name=["']description["'][^>]+content=["']([^"]+)["']/i) || ""
+  ).trim();
 
-  try {
-    gallery = extractGalleryImages(cleanedHtml, productUrl);
-    mainImage = gallery[0] || "";
-  } catch (e) {
-    gallery = [];
-    mainImage = "";
-  }
+  const gallery = extractGalleryImages(cleanedHtml, productUrl);
+  const mainImage = gallery[0] || "";
 
-  try {
-    price =
-      decodeHtmlEntities(
-        firstMatch(cleanedHtml, /<meta[^>]+property=["']product:price:amount["'][^>]+content=["']([^"]+)["']/i) || ""
-      ).trim() ||
-      findPriceInHtml(cleanedHtml);
-  } catch (e) {
-    price = "";
-  }
+  const price =
+    decodeHtmlEntities(
+      firstMatch(cleanedHtml, /<meta[^>]+property=["']product:price:amount["'][^>]+content=["']([^"]+)["']/i) || ""
+    ).trim() ||
+    findPriceInHtml(cleanedHtml);
 
-  try {
-    description = extractFullDescription(cleanedHtml, metaDescription);
-  } catch (e) {
-    description = metaDescription || "";
-  }
-
-  try {
-    shortDescription = buildShortDescription(description, metaDescription);
-  } catch (e) {
-    shortDescription = metaDescription || "";
-  }
-
-  try {
-    variants = extractVariants(cleanedHtml);
-  } catch (e) {
-    variants = { oblozenie: [], akryl: [], generic: [] };
-  }
-
-  try {
-    variants = applyVariantFallbacks(productUrl, variants, title, description);
-  } catch (e) {}
+  const description = extractFullDescription(cleanedHtml, metaDescription);
+  const shortDescription = buildShortDescription(description, metaDescription);
+  const variants = extractVariants(cleanedHtml);
 
   return {
     url: productUrl,
-    title: title || "Produkt",
-    price: price || "",
-    image: mainImage || "",
-    gallery: gallery.length ? gallery : (mainImage ? [mainImage] : []),
-    shortDescription: shortDescription || "",
-    description: description || metaDescription || "",
-    variants: {
-      oblozenie: Array.isArray(variants?.oblozenie) ? variants.oblozenie : [],
-      akryl: Array.isArray(variants?.akryl) ? variants.akryl : [],
-      generic: Array.isArray(variants?.generic) ? variants.generic : []
-    }
-  };
-}
-
-async function handleAppPing(request, env, corsHeaders) {
-  try {
-    if (!ENABLE_INSTALL_TRACKING) {
-      return jsonResponse({ success: true, disabled: true }, 200, corsHeaders);
-    }
-
-    if (!env.INSTALL_STATS) {
-      return jsonResponse(
-        { success: false, error: "Chyba: KV binding INSTALL_STATS nie je nastaveny." },
-        500,
-        corsHeaders
-      );
-    }
-
-    const data = await request.json();
-
-    const installId = String(data.installId || "").trim();
-    const appName = String(data.appName || "Platinum Lech Spa").trim();
-    const appVersion = String(data.appVersion || "1.0.0").trim();
-    const platform = String(data.platform || "").trim();
-    const userAgent = String(data.userAgent || "").trim();
-
-    if (!installId) {
-      return jsonResponse(
-        { success: false, error: "Chyba: installId chyba." },
-        400,
-        corsHeaders
-      );
-    }
-
-    const now = Date.now();
-    const today = new Date(now).toISOString().slice(0, 10);
-
-    const record = {
-      installId,
-      appName,
-      appVersion,
-      platform,
-      userAgent,
-      firstSeen: now,
-      lastSeen: now,
-      lastSeenDate: today
-    };
-
-    const key = "install:" + installId;
-    const existingRaw = await env.INSTALL_STATS.get(key);
-
-    if (existingRaw) {
-      try {
-        const existing = JSON.parse(existingRaw);
-        record.firstSeen = existing.firstSeen || now;
-      } catch (e) {}
-    }
-
-    await env.INSTALL_STATS.put(key, JSON.stringify(record));
-
-    return jsonResponse(
-      {
-        success: true,
-        tracked: true,
-        installId
-      },
-      200,
-      corsHeaders
-    );
-  } catch (e) {
-    return jsonResponse(
-      {
-        success: false,
-        error: "Chyba pri ukladani app aktivity."
-      },
-      500,
-      corsHeaders
-    );
-  }
-}
-
-async function handleAdminStats(url, env, corsHeaders) {
-  try {
-    const pin = String(url.searchParams.get("pin") || "").trim();
-
-    if (pin !== ADMIN_PIN) {
-      return jsonResponse(
-        { success: false, error: "Neplatny PIN." },
-        403,
-        corsHeaders
-      );
-    }
-
-    if (!env.INSTALL_STATS) {
-      return jsonResponse(
-        { success: false, error: "Chyba: KV binding INSTALL_STATS nie je nastaveny." },
-        500,
-        corsHeaders
-      );
-    }
-
-    const now = Date.now();
-    const oneDay = 24 * 60 * 60 * 1000;
-    const sevenDays = 7 * oneDay;
-    const thirtyDays = 30 * oneDay;
-    const oneEightyDays = 180 * oneDay;
-    const threeSixtyFiveDays = 365 * oneDay;
-
-    let cursor = undefined;
-    let total = 0;
-    let activeToday = 0;
-    let active7d = 0;
-    let active30d = 0;
-    let active180d = 0;
-    let active365d = 0;
-
-    do {
-      const list = await env.INSTALL_STATS.list({
-        prefix: "install:",
-        cursor
-      });
-
-      for (const item of list.keys) {
-        const raw = await env.INSTALL_STATS.get(item.name);
-        if (!raw) continue;
-
-        try {
-          const rec = JSON.parse(raw);
-          const lastSeen = Number(rec.lastSeen || 0);
-          if (!lastSeen) continue;
-
-          total += 1;
-
-          if (now - lastSeen <= oneDay) activeToday += 1;
-          if (now - lastSeen <= sevenDays) active7d += 1;
-          if (now - lastSeen <= thirtyDays) active30d += 1;
-          if (now - lastSeen <= oneEightyDays) active180d += 1;
-          if (now - lastSeen <= threeSixtyFiveDays) active365d += 1;
-        } catch (e) {}
-      }
-
-      cursor = list.list_complete ? undefined : list.cursor;
-    } while (cursor);
-
-    return jsonResponse(
-      {
-        success: true,
-        workerVersion: "safe-parser-v2",
-        stats: {
-          totalInstalls: total,
-          activeToday,
-          active7d,
-          active30d,
-          active180d,
-          active365d
-        }
-      },
-      200,
-      corsHeaders
-    );
-  } catch (e) {
-    return jsonResponse(
-      {
-        success: false,
-        error: "Chyba pri nacitani admin statistik."
-      },
-      500,
-      corsHeaders
-    );
-  }
-}
-
-function normalizeProductUrl(target) {
-  let parsed;
-  try {
-    parsed = new URL(target);
-  } catch {
-    throw new Error("Neplatna URL");
-  }
-
-  if (!/virivkyonline\.sk$/i.test(parsed.hostname)) {
-    throw new Error("Povolena je iba domena virivkyonline.sk");
-  }
-
-  parsed.protocol = "https:";
-  parsed.hostname = "www.virivkyonline.sk";
-
-  if (!parsed.pathname.endsWith("/")) {
-    parsed.pathname += "/";
-  }
-
-  return parsed.toString();
-}
-
-function buildUrlVariants(url) {
-  const u = new URL(url);
-  const variants = new Set();
-
-  variants.add(u.toString());
-
-  const noSlash = new URL(u.toString());
-  noSlash.pathname = noSlash.pathname.replace(/\/+$/, "");
-  variants.add(noSlash.toString());
-
-  const withSlash = new URL(noSlash.toString());
-  withSlash.pathname = withSlash.pathname + "/";
-  variants.add(withSlash.toString());
-
-  return [...variants];
-}
-
-function browserHeaders(url) {
-  return {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "sk-SK,sk;q=0.9,en;q=0.8",
-    "Cache-Control": "no-cache",
-    "Pragma": "no-cache",
-    "Referer": url,
-    "Upgrade-Insecure-Requests": "1"
+    title,
+    price,
+    image: mainImage,
+    gallery,
+    shortDescription,
+    description,
+    variants
   };
 }
 
@@ -545,21 +244,47 @@ function absolutizeUrl(url, base) {
 function extractGalleryImages(html, baseUrl) {
   const results = [];
 
-  const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
-  if (ogImage) {
-    const fullOg = absolutizeUrl(ogImage, baseUrl);
-    if (fullOg) results.push(fullOg);
+  const galleryBlockRegexes = [
+    /<div[^>]*class=["'][^"']*p-detail-inner[^"']*["'][\s\S]*?<\/div>\s*<\/div>/i,
+    /<div[^>]*class=["'][^"']*p-image-wrapper[^"']*["'][\s\S]*?<\/div>/i,
+    /<div[^>]*class=["'][^"']*p-thumbnails-wrapper[^"']*["'][\s\S]*?<\/div>/i,
+    /<div[^>]*class=["'][^"']*p-image-thumbnails[^"']*["'][\s\S]*?<\/div>/i,
+    /<div[^>]*class=["'][^"']*slick-track[^"']*["'][\s\S]*?<\/div>/i
+  ];
+
+  let galleryHtml = "";
+  for (const regex of galleryBlockRegexes) {
+    const m = html.match(regex);
+    if (m && m[0]) {
+      galleryHtml += " " + m[0];
+    }
   }
 
-  const imageRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-  let match;
+  if (!galleryHtml) {
+    const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
+    if (ogImage) {
+      const full = absolutizeUrl(ogImage, baseUrl);
+      return full ? [full] : [];
+    }
+    return [];
+  }
 
-  while ((match = imageRegex.exec(html)) !== null) {
-    const raw = match[1] || "";
+  const imgRegex = /<(img|a)[^>]+(?:src|href|data-src|data-gallery-src)=["']([^"']+)["'][^>]*>/gi;
+  let m;
+
+  while ((m = imgRegex.exec(galleryHtml)) !== null) {
+    const raw = m[2] || "";
+    if (!raw) continue;
+
     const full = absolutizeUrl(raw, baseUrl);
     if (!full) continue;
 
     const lower = full.toLowerCase();
+
+    if (
+      !lower.includes("cdn.myshoptet.com") &&
+      !lower.includes("myshoptet.com")
+    ) continue;
 
     if (
       !lower.includes(".jpg") &&
@@ -569,39 +294,63 @@ function extractGalleryImages(html, baseUrl) {
     ) continue;
 
     if (
+      lower.includes("favicon") ||
       lower.includes("logo") ||
       lower.includes("icon") ||
-      lower.includes("favicon") ||
       lower.includes("placeholder") ||
       lower.includes("gift") ||
       lower.includes("house") ||
-      lower.includes("home-icon") ||
+      lower.includes("home") ||
+      lower.includes("badge") ||
+      lower.includes("cert") ||
       lower.includes("filter") ||
       lower.includes("spa-line") ||
       lower.includes("chemia") ||
       lower.includes("tablety")
     ) continue;
 
-    if (
-      lower.includes("virivka") ||
-      lower.includes("myshoptet") ||
-      lower.includes("cdn.myshoptet.com") ||
-      lower.includes("/shop/big/")
-    ) {
-      results.push(full);
+    results.push(full);
+  }
+
+  const unique = [...new Set(results)];
+
+  if (!unique.length) {
+    const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
+    if (ogImage) {
+      const full = absolutizeUrl(ogImage, baseUrl);
+      return full ? [full] : [];
     }
   }
 
-  return [...new Set(results)].slice(0, 6);
+  return unique;
+}
+
+function pickBestImage(html, baseUrl, title) {
+  const gallery = extractGalleryImages(html, baseUrl);
+  if (gallery.length) {
+    return gallery[0];
+  }
+
+  const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
+  if (ogImage) {
+    const full = absolutizeUrl(ogImage, baseUrl);
+    if (full) return full;
+  }
+
+  return "";
 }
 
 function findPriceInHtml(html) {
   const text = stripTags(html);
   const eurMatch = text.match(/(?:od\s*)?€\s*[0-9][0-9\s.,]*/i);
-  if (eurMatch) return eurMatch[0].replace(/\s+/g, " ").trim();
+  if (eurMatch) {
+    return eurMatch[0].replace(/\s+/g, " ").trim();
+  }
 
   const eurAfterMatch = text.match(/(?:od\s*)?[0-9][0-9\s.,]*\s*€/i);
-  if (eurAfterMatch) return eurAfterMatch[0].replace(/\s+/g, " ").trim();
+  if (eurAfterMatch) {
+    return eurAfterMatch[0].replace(/\s+/g, " ").trim();
+  }
 
   return "";
 }
@@ -618,7 +367,9 @@ function extractFullDescription(html, fallback) {
   for (const regex of candidates) {
     const found = firstMatch(html, regex);
     const stripped = cleanDescriptionText(stripTags(found));
-    if (stripped && stripped.length > 80) return stripped;
+    if (stripped && stripped.length > 80) {
+      return stripped;
+    }
   }
 
   return cleanDescriptionText(fallback || "");
@@ -651,186 +402,77 @@ function buildShortDescription(description, fallback) {
 }
 
 function extractVariants(html) {
-  const selects = extractGenericSelectVariants(html);
-  const textGroups = extractTextVariants(stripTags(html));
-  const merged = dedupeVariantGroups([...selects, ...textGroups]);
+  const text = stripTags(html);
 
-  const oblozenie = findVariantValuesByName(merged, [
-    "farba obloženia a schodíkov",
-    "farba oblozenia a schodikov",
-    "farba obloženia",
-    "farba oblozenia",
-    "obloženie",
-    "oblozenie"
-  ]);
+  const oblozenie = extractVariantBlock(
+    html,
+    text,
+    [
+      "FARBA OBLOŽENIA A SCHODÍKOV",
+      "FARBA OBLOZENIA A SCHODIKOV",
+      "FARBA OBLOŽENIA",
+      "FARBA OBLOZENIA",
+      "OBLOŽENIE",
+      "OBLOZENIE"
+    ]
+  );
 
-  const akryl = findVariantValuesByName(merged, [
-    "farba akrylu na výber",
-    "farba akrylu na vyber",
-    "farba akrylu",
-    "akryl"
-  ]);
+  const akryl = extractVariantBlock(
+    html,
+    text,
+    [
+      "FARBA AKRYLU NA VÝBER",
+      "FARBA AKRYLU NA VYBER",
+      "FARBA AKRYLU",
+      "AKRYL"
+    ]
+  );
 
   return {
     oblozenie,
-    akryl,
-    generic: merged
+    akryl
   };
 }
 
-function extractTextVariants(plainText) {
-  const text = String(plainText || "").replace(/\r/g, "");
+function extractVariantBlock(html, plainText, labels) {
+  for (const label of labels) {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-  const patterns = [
-    {
-      name: "Farba",
-      regex: /Farba\s+Zvoľte variant\s+(.+?)(?:\n\s*Zvolený variant|\n\s*Kód:|\n\s*€|$)/i
-    },
-    {
-      name: "Výkon",
-      regex: /V[ÝY]KON\s+Zvoľte variant\s+(.+?)(?:\n\s*Zvolený variant|\n\s*Kód:|\n\s*€|$)/i
-    },
-    {
-      name: "Rozmer",
-      regex: /Rozmer\s+Zvoľte variant\s+(.+?)(?:\n\s*Zvolený variant|\n\s*Kód:|\n\s*€|$)/i
-    },
-    {
-      name: "Typ",
-      regex: /Typ\s+Zvoľte variant\s+(.+?)(?:\n\s*Zvolený variant|\n\s*Kód:|\n\s*€|$)/i
+    const selectRegex = new RegExp(
+      escaped + "[\\s\\S]{0,250}?<select[\\s\\S]*?<\\/select>",
+      "i"
+    );
+    const selectMatch = html.match(selectRegex);
+
+    if (selectMatch) {
+      const optionValues = extractOptionsFromSelect(selectMatch[0]);
+      if (optionValues.length) return optionValues;
     }
-  ];
 
-  const groups = [];
+    const textRegex = new RegExp(
+      escaped + "\\s+Zvoľte variant\\s+([\\s\\S]*?)(?:\\n\\s*[A-ZÁČĎÉÍĹĽŇÓÔŔŠŤÚÝŽ][^\\n]*Zvoľte variant|\\n\\s*Kód:|\\n\\s*Cena:|\\n\\s*€|$)",
+      "i"
+    );
+    const textMatch = plainText.match(textRegex);
 
-  for (const pattern of patterns) {
-    const m = text.match(pattern.regex);
-    if (!m || !m[1]) continue;
-    const values = splitVariantValues(m[1]);
-    if (values.length) groups.push({ name: pattern.name, values });
-  }
+    if (textMatch && textMatch[1]) {
+      const values = textMatch[1]
+        .replace(/\s+/g, " ")
+        .trim()
+        .split(" ")
+        .map(x => x.trim())
+        .filter(Boolean)
+        .filter(x => !/^zvoľte$/i.test(x))
+        .filter(x => !/^zvolte$/i.test(x))
+        .filter(x => !/^variant$/i.test(x))
+        .filter(x => !/^reset$/i.test(x))
+        .filter(x => !/^vybraných$/i.test(x))
+        .filter(x => !/^parametrov\.?$/i.test(x));
 
-  return groups;
-}
-
-function splitVariantValues(rawText) {
-  const text = String(rawText || "").replace(/\s+/g, " ").trim();
-  if (!text) return [];
-
-  const tokens = text.split(" ").map(x => x.trim()).filter(Boolean);
-  const values = [];
-
-  for (const token of tokens) {
-    if (
-      /^zvoľte$/i.test(token) ||
-      /^zvolte$/i.test(token) ||
-      /^variant$/i.test(token) ||
-      /^reset$/i.test(token) ||
-      /^vybraných$/i.test(token) ||
-      /^vybranych$/i.test(token) ||
-      /^parametrov\.?$/i.test(token)
-    ) {
-      continue;
-    }
-    values.push(token);
-  }
-
-  return [...new Set(values)];
-}
-
-function extractGenericSelectVariants(html) {
-  const results = [];
-  const selectRegex = /<select([^>]*)>([\s\S]*?)<\/select>/gi;
-  let match;
-
-  while ((match = selectRegex.exec(html)) !== null) {
-    const selectAttrs = match[1] || "";
-    const selectHtml = match[0] || "";
-    const values = extractOptionsFromSelect(selectHtml);
-    if (!values.length) continue;
-
-    const name =
-      extractSelectLabel(html, match.index) ||
-      extractAttr(selectAttrs, "name") ||
-      extractAttr(selectAttrs, "id") ||
-      "Variant";
-
-    results.push({
-      name: cleanVariantName(name),
-      values: [...new Set(values)]
-    });
-  }
-
-  return dedupeVariantGroups(results);
-}
-
-function extractSelectLabel(html, selectIndex) {
-  const before = html.slice(Math.max(0, selectIndex - 1500), selectIndex);
-
-  const labelMatches = [...before.matchAll(/<label[^>]*>([\s\S]*?)<\/label>/gi)];
-  if (labelMatches.length) {
-    const last = labelMatches[labelMatches.length - 1];
-    const text = stripTags(last[1] || "").trim();
-    if (text) return text;
-  }
-
-  const strongMatches = [...before.matchAll(/<(strong|b|span|div)[^>]*>([\s\S]*?)<\/\1>/gi)];
-  for (let i = strongMatches.length - 1; i >= 0; i--) {
-    const text = stripTags(strongMatches[i][2] || "").trim();
-    if (
-      text &&
-      text.length < 80 &&
-      !/do košíka/i.test(text) &&
-      !/do kosika/i.test(text) &&
-      !/kód/i.test(text) &&
-      !/kod/i.test(text) &&
-      !/cena/i.test(text)
-    ) {
-      return text;
+      if (values.length) return [...new Set(values)];
     }
   }
 
-  return "";
-}
-
-function extractAttr(attrs, attrName) {
-  const regex = new RegExp(attrName + `=["']([^"']+)["']`, "i");
-  const m = attrs.match(regex);
-  return m && m[1] ? m[1].trim() : "";
-}
-
-function cleanVariantName(name) {
-  return String(name || "")
-    .replace(/\s+/g, " ")
-    .replace(/:+$/, "")
-    .trim();
-}
-
-function dedupeVariantGroups(groups) {
-  const map = new Map();
-
-  for (const group of groups) {
-    const key = (group.name || "Variant").toLowerCase().trim();
-    if (!map.has(key)) {
-      map.set(key, {
-        name: group.name || "Variant",
-        values: [...group.values]
-      });
-    } else {
-      const existing = map.get(key);
-      existing.values = [...new Set([...existing.values, ...group.values])];
-    }
-  }
-
-  return [...map.values];
-}
-
-function findVariantValuesByName(groups, names) {
-  for (const group of groups) {
-    const gname = (group.name || "").toLowerCase();
-    if (names.some(name => gname.includes(name))) {
-      return group.values || [];
-    }
-  }
   return [];
 }
 
@@ -849,74 +491,11 @@ function extractOptionsFromSelect(selectHtml) {
     if (/zvolte/i.test(finalValue)) continue;
     if (/vyberte/i.test(finalValue)) continue;
     if (/reset/i.test(finalValue)) continue;
-    if (/vybraných parametrov/i.test(finalValue)) continue;
-    if (/vybranych parametrov/i.test(finalValue)) continue;
 
     options.push(finalValue);
   }
 
   return [...new Set(options)];
-}
-
-function applyVariantFallbacks(productUrl, variants, title = "", description = "") {
-  const url = String(productUrl || "").toLowerCase();
-  const ttl = String(title || "").toLowerCase();
-  const desc = String(description || "").toLowerCase();
-  const joined = `${url} ${ttl} ${desc}`;
-
-  const safeVariants = {
-    oblozenie: Array.isArray(variants?.oblozenie) ? [...variants.oblozenie] : [],
-    akryl: Array.isArray(variants?.akryl) ? [...variants.akryl] : [],
-    generic: Array.isArray(variants?.generic) ? [...variants.generic] : []
-  };
-
-  function hasGenericName(names) {
-    return safeVariants.generic.some(g => {
-      const n = String(g?.name || "").toLowerCase().trim();
-      return names.some(x => n.includes(x));
-    });
-  }
-
-  const isHotTub =
-    joined.includes("virivka") ||
-    joined.includes("vírivka") ||
-    joined.includes("swim spa") ||
-    joined.includes("wellness");
-
-  if (isHotTub) {
-    if (!safeVariants.oblozenie.length) safeVariants.oblozenie = [...HOT_TUB_OBLOZENIE];
-    if (!safeVariants.akryl.length) safeVariants.akryl = [...HOT_TUB_AKRYL];
-  }
-
-  if (
-    joined.includes("slnecnik") ||
-    joined.includes("slnečník") ||
-    joined.includes("270 x 270") ||
-    joined.includes("konzolovy") ||
-    joined.includes("konzolový")
-  ) {
-    if (!hasGenericName(["farba"])) {
-      safeVariants.generic.push({
-        name: "Farba",
-        values: [...SLNECNIK_VARIANTS]
-      });
-    }
-  }
-
-  if (
-    joined.includes("zealux") ||
-    joined.includes("tepelne cerpadlo") ||
-    joined.includes("tepelné čerpadlo")
-  ) {
-    if (!hasGenericName(["výkon", "vykon"])) {
-      safeVariants.generic.push({
-        name: "Výkon",
-        values: [...ZEALUX_VARIANTS]
-      });
-    }
-  }
-
-  return safeVariants;
 }
 
 async function handleContactForm(request, env, corsHeaders) {
@@ -1033,7 +612,6 @@ async function handleOrder(request, env, corsHeaders) {
       const qty = Math.max(1, parseInt(item.qty || 1, 10));
       const oblozenie = (item.oblozenie || "").trim();
       const akryl = (item.akryl || "").trim();
-      const variantText = (item.variantText || "").trim();
 
       const numericPrice = parsePriceNumber(priceText);
       const rowTotal = numericPrice * qty;
@@ -1047,7 +625,6 @@ async function handleOrder(request, env, corsHeaders) {
           "<td style='padding:8px;border:1px solid #ddd;'>" + qty + "</td>" +
           "<td style='padding:8px;border:1px solid #ddd;'>" + escapeHtml(oblozenie || "-") + "</td>" +
           "<td style='padding:8px;border:1px solid #ddd;'>" + escapeHtml(akryl || "-") + "</td>" +
-          "<td style='padding:8px;border:1px solid #ddd;'>" + escapeHtml(variantText || "-") + "</td>" +
           "<td style='padding:8px;border:1px solid #ddd;'>" + (numericPrice ? rowTotal.toFixed(2) + " €" : "-") + "</td>" +
         "</tr>";
 
@@ -1076,7 +653,6 @@ async function handleOrder(request, env, corsHeaders) {
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Pocet</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba oblozenia</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba akrylu</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Dalsi variant</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Medzisucet</th>" +
           "</tr>" +
         "</thead>" +
@@ -1101,7 +677,6 @@ async function handleOrder(request, env, corsHeaders) {
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Pocet</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba oblozenia</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba akrylu</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Dalsi variant</th>" +
             "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Medzisucet</th>" +
           "</tr>" +
         "</thead>" +
@@ -1186,8 +761,6 @@ function jsonResponse(data, status, corsHeaders) {
     status,
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-      "Pragma": "no-cache",
       ...corsHeaders
     }
   });
@@ -1207,4 +780,4 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-      }
+}
