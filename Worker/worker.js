@@ -848,7 +848,7 @@ function extractSelectLabel(html, selectIndex) {
 }
 
 function extractAttr(attrs, attrName) {
-  const regex = new RegExp(attrName + '=["\\']([^"\\']+)["\\']', "i");
+  const regex = new RegExp(attrName + `=["']([^"']+)["']`, "i");
   const m = attrs.match(regex);
   return m && m[1] ? m[1].trim() : "";
 }
@@ -1201,4 +1201,4 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-  }
+      }
