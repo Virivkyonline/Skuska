@@ -1,1210 +1,1681 @@
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Cache-Control, Pragma"
-    };
-
-    if (request.method === "OPTIONS") {
-      return new Response("", { headers: corsHeaders });
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Platinum Lech Spa</title>
+  <style>
+    :root {
+      --bg-color: #0B1320;
+      --title-text: #FFFFFF;
+      --center-text: #F3F4F6;
+      --accent-text: #D4AF37;
+      --button-text: #0B1320;
+      --muted-text: #D5D9E2;
+      --card-border: rgba(255,255,255,0.08);
+      --panel-bg: linear-gradient(180deg, #274a77 0%, #1f3d63 100%);
+      --dark-card: rgba(10, 20, 36, 0.45);
+      --success-green: #1f9d55;
+      --danger-red: #b91c1c;
+      --tab-bg: linear-gradient(180deg, #17345a 0%, #112947 100%);
     }
 
-    if (request.method === "GET" && url.pathname === "/feed") {
-      return handleFeedProxy(url, corsHeaders);
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
-    if (request.method === "GET" && (url.pathname === "/product-detail" || url.pathname === "/pr")) {
-      return handleProductDetail(url, corsHeaders);
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--title-text);
     }
 
-    if (request.method === "POST" && url.pathname === "/app-ping") {
-      return handleAppPing(request, env, corsHeaders);
+    body {
+      background-image: url('bublinky.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-color: var(--bg-color);
     }
 
-    if (request.method === "GET" && (url.pathname === "/admin-stats" || url.pathname === "/ac")) {
-      return handleAdminStats(url, env, corsHeaders);
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
-    if (request.method === "POST" && url.pathname === "/order") {
-      return handleOrder(request, env, corsHeaders);
+    .title-panel {
+      width: 100%;
+      background: var(--tab-bg);
+      text-align: center;
+      padding: 30px 16px 20px 16px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.28);
     }
 
-    if (request.method === "POST") {
-      return handleContactForm(request, env, corsHeaders);
+    .title-panel h1 {
+      font-size: 28px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: var(--title-text);
+      margin-bottom: 10px;
     }
 
-    return jsonResponse(
-      { success: false, error: "Pouzi GET alebo POST." },
-      405,
-      corsHeaders
-    );
-  }
-};
+    .title-panel p {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent-text);
+    }
 
-const ADMIN_PIN = "780801";
-const ENABLE_INSTALL_TRACKING = true;
+    .top-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 14px 14px 0 14px;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+    }
 
-const HOT_TUB_OBLOZENIE = ["HNEDÁ", "ANTRACIT", "ŠEDÁ"];
-const HOT_TUB_AKRYL = [
-  "Gypsum",
-  "Mayan Cooper",
-  "Midnight opal",
-  "Ocean wave",
-  "Odysey",
-  "Oyster opal",
-  "Sahara",
-  "Silver white marble"
-];
+    .top-tabs button {
+      width: 100%;
+      padding: 13px 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      background: linear-gradient(180deg, #e2bf4d 0%, #cfa72d 100%);
+      color: var(--button-text);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+    }
 
-const ZEALUX_VARIANTS = [
-  "11KW (229/11K)",
-  "14KW (229/14K)",
-  "17KW (229/17K)",
-  "21KW (229/21K)",
-  "26KW (229/26K)",
-  "30KW (229/30K)"
-];
+    .top-tabs button.active {
+      background: linear-gradient(180deg, #fff3c4 0%, #dcb43f 100%);
+    }
 
-const SLNECNIK_VARIANTS = [
-  "Antracit (232/ANT)",
-  "Šedá (232/SED)",
-  "Taupe (232/TAU)"
-];
+    .content {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 22px 14px;
+    }
 
-async function handleFeedProxy(url, corsHeaders) {
-  try {
-    const target = url.searchParams.get("url");
+    .center-panel {
+      width: 100%;
+      max-width: 1100px;
+      background: var(--panel-bg);
+      border-radius: 28px;
+      padding: 26px 18px;
+      box-shadow: 0 18px 36px rgba(0,0,0,0.30);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
 
-    if (!target) {
-      return new Response("Missing url parameter", {
-        status: 400,
-        headers: corsHeaders
+    .center-panel h2 {
+      font-size: 24px;
+      margin-bottom: 12px;
+      color: var(--title-text);
+      text-align: center;
+    }
+
+    .center-panel p {
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--center-text);
+      margin-bottom: 14px;
+    }
+
+    .page-section {
+      display: none;
+    }
+
+    .page-section.active {
+      display: block;
+    }
+
+    #status-home,
+    #status-products,
+    #status-category,
+    #status-detail,
+    #order-status,
+    #admin-status {
+      margin-top: 10px;
+      font-size: 15px;
+      color: #FFFFFF;
+      text-align: left;
+    }
+
+    .category-grid,
+    .products-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .category-card,
+    .product-card {
+      background: var(--dark-card);
+      border: 1px solid var(--card-border);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 14px 28px rgba(0,0,0,0.22);
+    }
+
+    .category-card {
+      padding: 20px;
+    }
+
+    .category-card h3 {
+      font-size: 22px;
+      line-height: 1.3;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .category-card p {
+      color: var(--muted-text);
+      margin-bottom: 14px;
+      font-size: 15px;
+    }
+
+    .product-image-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: rgba(255,255,255,0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .product-image-wrap img,
+    .detail-main-image img,
+    .cart-thumb img,
+    .favorite-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .product-body {
+      padding: 16px;
+      text-align: left;
+    }
+
+    .product-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+
+    .product-price {
+      font-size: 22px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+    }
+
+    .product-desc,
+    .detail-description {
+      font-size: 14px;
+      color: var(--muted-text);
+      line-height: 1.55;
+      white-space: pre-line;
+    }
+
+    .product-desc {
+      margin-bottom: 12px;
+      display: -webkit-box;
+      -webkit-line-clamp: 5;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .action-row,
+    .cart-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn,
+    .variant-select,
+    .qty-input,
+    input,
+    textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      font-size: 16px;
+    }
+
+    .btn {
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.22s ease;
+      background: linear-gradient(180deg, #e2bf4d 0%, #cfa72d 100%);
+      color: var(--button-text);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+    }
+
+    .btn.secondary {
+      background: linear-gradient(180deg, #315887 0%, #244465 100%);
+      color: #fff;
+    }
+
+    .btn.danger {
+      background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+      color: #fff;
+    }
+
+    .variant-select,
+    .qty-input,
+    input,
+    textarea {
+      background: rgba(255,255,255,0.94);
+      color: #111827;
+      outline: none;
+      font-weight: 600;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .empty-state {
+      background: rgba(10, 20, 36, 0.35);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 20px;
+      color: var(--muted-text);
+      font-size: 15px;
+      text-align: left;
+      margin-top: 16px;
+    }
+
+    .detail-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .detail-main-image {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 20px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--card-border);
+    }
+
+    .detail-title {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .detail-price {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      color: #fff;
+    }
+
+    .variant-block {
+      margin-top: 12px;
+    }
+
+    .variant-label {
+      font-size: 14px;
+      color: var(--muted-text);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    .favorites-list,
+    .cart-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .favorite-item,
+    .cart-item {
+      background: var(--dark-card);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 84px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .favorite-thumb,
+    .cart-thumb {
+      width: 84px;
+      height: 84px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .favorite-title,
+    .cart-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+
+    .favorite-meta,
+    .cart-meta {
+      font-size: 14px;
+      color: var(--muted-text);
+      line-height: 1.5;
+    }
+
+    .cart-total {
+      margin-top: 16px;
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      text-align: left;
+    }
+
+    .inline-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .inline-row .btn,
+    .inline-row .qty-input {
+      width: auto;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .admin-stat {
+      background: var(--dark-card);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .admin-stat-title {
+      font-size: 14px;
+      color: var(--muted-text);
+      margin-bottom: 8px;
+    }
+
+    .admin-stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .logo-bottom {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      min-height: 120px;
+      padding: 16px 16px 24px 16px;
+    }
+
+    .logo-bottom img {
+      max-width: 240px;
+      width: 60%;
+      height: auto;
+      display: block;
+      cursor: pointer;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--success-green);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      z-index: 9999;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .home-buttons {
+      margin-top: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    @media (max-width: 520px) {
+      .top-tabs button {
+        font-size: 13px;
+        padding: 12px 6px;
+      }
+    }
+
+    @media (min-width: 700px) {
+      .title-panel h1 {
+        font-size: 46px;
+      }
+
+      .title-panel p {
+        font-size: 20px;
+      }
+
+      .center-panel {
+        padding: 34px 28px;
+      }
+
+      .center-panel h2 {
+        font-size: 32px;
+      }
+
+      .category-grid,
+      .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .detail-layout {
+        grid-template-columns: 380px 1fr;
+      }
+
+      .admin-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .logo-bottom img {
+        max-width: 320px;
+      }
+    }
+
+    @media (min-width: 980px) {
+      .category-grid,
+      .products-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="title-panel">
+      <h1>PLATINUM LECH SPA</h1>
+      <p>KVALITNÉ VÍRIVKY NA PREDAJ</p>
+    </div>
+
+    <div class="top-tabs">
+      <button id="tab-home" class="active" type="button" onclick="showSection('home')">Domov</button>
+      <button id="tab-products" type="button" onclick="showSection('products')">Produkty</button>
+      <button id="tab-favorites" type="button" onclick="showSection('favorites'); renderFavorites();">Obľúbené</button>
+      <button id="tab-cart" type="button" onclick="showSection('cart'); renderCart();">Košík</button>
+    </div>
+
+    <div class="content">
+      <div class="center-panel">
+
+        <section id="section-home" class="page-section active">
+          <h2>Prečo si vybrať nás</h2>
+          <p>
+            Objavte svet domáceho relaxu, kde sa pohodlie spája s moderným dizajnom,
+            spoľahlivosťou a dlhoročnými skúsenosťami.
+          </p>
+          <p>
+            Naše vírivky predávame pod vlastnou značkou <strong style="color:#D4AF37;">Platinum Lech Spa</strong>
+            s dôrazom na kvalitu, dlhú životnosť, spokojnosť zákazníkov a profesionálny servis.
+          </p>
+          <p>
+            Volám sa <strong style="color:#D4AF37;">Stanislav Lech</strong> a vírivkám sa venujem viac ako 15 rokov.
+            V podnikaní pôsobím viac ako 27 rokov, preto viem, že pri kúpe vírivky je dôležitý nielen produkt,
+            ale aj firma, na ktorú sa môžete spoľahnúť aj v budúcnosti.
+          </p>
+
+          <div class="home-buttons">
+            <button class="btn" type="button" onclick="showSection('products')">Prejsť na produkty</button>
+            <button class="btn secondary" type="button" onclick="showSection('cart'); renderCart();">Prejsť do košíka</button>
+          </div>
+        </section>
+
+        <section id="section-products" class="page-section">
+          <h2>Produkty</h2>
+          <p id="status-products">Vyber si kategóriu.</p>
+          <div id="category-grid" class="category-grid"></div>
+        </section>
+
+        <section id="section-category" class="page-section">
+          <h2 id="category-title">Kategória</h2>
+          <p id="status-category">Načítavam produkty...</p>
+          <div class="action-row" style="margin-bottom:14px;">
+            <button class="btn secondary" type="button" onclick="showSection('products')">Späť na kategórie</button>
+          </div>
+          <div id="products-grid" class="products-grid"></div>
+          <div id="products-empty" class="empty-state" style="display:none;">Žiadne produkty sa nepodarilo načítať.</div>
+        </section>
+
+        <section id="section-detail" class="page-section">
+          <h2>Detail produktu</h2>
+          <p id="status-detail">Vyber produkt.</p>
+
+          <div id="detail-empty" class="empty-state" style="display:none;">Detail produktu sa nepodarilo načítať.</div>
+
+          <div id="detail-wrap" style="display:none;">
+            <div class="detail-layout">
+              <div>
+                <div class="detail-main-image" id="detail-main-image"></div>
+              </div>
+
+              <div>
+                <div class="detail-title" id="detail-title"></div>
+                <div class="detail-price" id="detail-price"></div>
+                <div class="detail-description" id="detail-description"></div>
+
+                <div id="variant-oblozenie-wrap" class="variant-block" style="display:none;">
+                  <div class="variant-label">Farba obloženia</div>
+                  <select id="variant-oblozenie" class="variant-select"></select>
+                </div>
+
+                <div id="variant-akryl-wrap" class="variant-block" style="display:none;">
+                  <div class="variant-label">Farba akrylu</div>
+                  <select id="variant-akryl" class="variant-select"></select>
+                </div>
+
+                <div id="generic-variants-wrap"></div>
+
+                <div class="variant-block">
+                  <div class="variant-label">Počet kusov</div>
+                  <input id="detail-qty" class="qty-input" type="number" min="1" value="1">
+                </div>
+
+                <div class="action-row">
+                  <button class="btn" type="button" onclick="addDetailToCart()">Pridať do košíka</button>
+                  <button class="btn secondary" type="button" onclick="saveDetailToFavorites()">Uložiť do obľúbených</button>
+                  <button class="btn secondary" type="button" onclick="backToCurrentCategory()">Späť na produkty</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="section-favorites" class="page-section">
+          <h2>Obľúbené produkty</h2>
+          <p>Tu sa ukladajú tvoje obľúbené produkty.</p>
+          <div id="favorites-list" class="favorites-list"></div>
+          <div class="action-row">
+            <button class="btn danger" type="button" onclick="clearFavorites()">Vymazať obľúbené</button>
+            <button class="btn secondary" type="button" onclick="showSection('products')">Späť na produkty</button>
+          </div>
+        </section>
+
+        <section id="section-cart" class="page-section">
+          <h2>Nákupný košík</h2>
+          <div id="cart-list" class="cart-list"></div>
+          <div id="cart-total" class="cart-total">Spolu: 0 €</div>
+
+          <h2 style="margin-top:28px;">Objednávka</h2>
+          <form id="orderForm">
+            <input type="text" id="order_name" placeholder="Meno a priezvisko" required>
+            <input type="email" id="order_email" placeholder="Email" required>
+            <input type="tel" id="order_phone" placeholder="Telefónne číslo" required>
+            <input type="text" id="order_street" placeholder="Ulica" required>
+            <input type="text" id="order_house_number" placeholder="Súpisné / orientačné číslo" required>
+            <input type="text" id="order_zip" placeholder="PSČ" required>
+            <input type="text" id="order_city" placeholder="Mesto" required>
+            <textarea id="order_note" placeholder="Poznámka k objednávke"></textarea>
+
+            <div class="cart-buttons">
+              <button class="btn" type="submit">Odoslať objednávku</button>
+              <button class="btn danger" type="button" onclick="clearCart()">Vymazať košík</button>
+              <button class="btn secondary" type="button" onclick="clearCustomerData()">Vymazať údaje zákazníka</button>
+              <button class="btn secondary" type="button" onclick="showSection('products')">Späť na produkty</button>
+            </div>
+          </form>
+
+          <p id="order-status"></p>
+        </section>
+
+        <section id="section-admin" class="page-section">
+          <h2>Admin štatistiky</h2>
+          <p id="admin-status">Skrytý admin panel.</p>
+
+          <div class="admin-grid">
+            <div class="admin-stat">
+              <div class="admin-stat-title">Celkom zariadení</div>
+              <div class="admin-stat-value" id="admin-total">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne dnes</div>
+              <div class="admin-stat-value" id="admin-today">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne 7 dní</div>
+              <div class="admin-stat-value" id="admin-7d">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne 30 dní</div>
+              <div class="admin-stat-value" id="admin-30d">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne 180 dní</div>
+              <div class="admin-stat-value" id="admin-180d">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne 365 dní</div>
+              <div class="admin-stat-value" id="admin-365d">0</div>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button class="btn secondary" type="button" onclick="showSection('home')">Späť</button>
+          </div>
+        </section>
+
+        <div class="logo-bottom">
+          <img id="adminLogo" src="logo-gold.png" alt="Logo Platinum Lech Spa">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Pridané do košíka</div>
+
+  <script>
+    const API_BASE = 'https://virivkyapp.lechstav.workers.dev';
+    const ADMIN_PIN = '780801';
+
+    const CATEGORIES = [
+      {
+        id: 'hot-tubs-4-5',
+        title: 'Vírivky pre 4–5 osôb',
+        description: 'Modely vhodné pre rodinu a pohodlný relax doma aj na záhrade.',
+        urls: [
+          'https://www.virivkyonline.sk/virivka-aurora---luxusna-5-miestna-virivka-s-hydromasazou-pre-dom-a-zahradu/',
+          'https://www.virivkyonline.sk/virivka-life-220x220x90cm-prijemny-komfort-a-styl-pre-5-osob/',
+          'https://www.virivkyonline.sk/virivka-model-split-200x200x90cm-5-miestna-skladom-akcia-/',
+          'https://www.virivkyonline.sk/virivka-model-springs-210x210x92cm-kupelny-zazitok-a-stylovy-dizajn-pre-kazdy-domov/',
+          'https://www.virivkyonline.sk/virivka-new-maximus---luxusny-relax-moderny-dizajn/',
+          'https://www.virivkyonline.sk/virivka-new-maximus--life/',
+          'https://www.virivkyonline.sk/virivka-new-maximus-deluxe--luxusny-relax-moderny-dizajn/'
+        ]
+      },
+      {
+        id: 'hot-tubs-2-3',
+        title: 'Malé vírivky pre 2–3 osoby',
+        description: 'Kompaktné modely vhodné na menší priestor a útulný wellness doma.',
+        urls: [
+          'https://www.virivkyonline.sk/virivka-home-210x160x77cm-kompaktny-rozmer-pre-domaci-wellness/',
+          'https://www.virivkyonline.sk/virivka-sun-200x160x90-idealna-volba-pre-pohodlie-a-relaxaciu-v-mensom-priestore/',
+          'https://www.virivkyonline.sk/virivka-puma-210x170x90-exkluzivny-model-pre-utulne-relaxacne-chvile/'
+        ]
+      },
+      {
+        id: 'hot-tubs-6-plus',
+        title: 'Vírivky pre 6 a viac osôb',
+        description: 'Väčšie modely pre viac osôb a ešte viac priestoru na relax.',
+        urls: [
+          'https://www.virivkyonline.sk/virivka-model-panama-200x200x89cm-pohodlny-priestor-pre-6-osob/',
+          'https://www.virivkyonline.sk/virivka-model-gama-220x220x95cm-pohodlny-priestor-pre-6-osob/',
+          'https://www.virivkyonline.sk/swim-spa-081--vstavany-bazen-do-zeme-perfektne-plavecke-zazitky-a-spa-komfort/'
+        ]
+      },
+      {
+        id: 'accessories',
+        title: 'Doplnky a voliteľná výbava',
+        description: 'Doplnky, technológie, schodíky, tepelné čerpadlá, UV lampy a ďalšia výbava.',
+        urls: [
+          'https://www.virivkyonline.sk/nahradna-ziarovka-pre-uv-lampu/',
+          'https://www.virivkyonline.sk/termokryt-pre-virivku-zadanie-do-vyroby/',
+          'https://www.virivkyonline.sk/zdvihak-na-termokryt-luxus/',
+          'https://www.virivkyonline.sk/hydraulicky-zdvihak-lux/',
+          'https://www.virivkyonline.sk/byintek-u80-max/',
+          'https://www.virivkyonline.sk/bazenovy-vysavac-spa-vac-paradise/',
+          'https://www.virivkyonline.sk/konzolovy-slnecnik-270-x-270--vratane-zakladne-na-zemi--antracit/',
+          'https://www.virivkyonline.sk/tepelne-cerpadlo-zealux/',
+          'https://www.virivkyonline.sk/davkovacia-stanica-va-dos-basic-oxy-ph/',
+          'https://www.virivkyonline.sk/schodiky-standard/',
+          'https://www.virivkyonline.sk/barovy-stol-so-stolickami-2ks/',
+          'https://www.virivkyonline.sk/uv-lampa/',
+          'https://www.virivkyonline.sk/revolucny-automaticky-cistic-filtrov-estelle-revolucny/',
+          'https://www.virivkyonline.sk/predpriprava-na-tepelne-cerpadlo/',
+          'https://www.virivkyonline.sk/pop-up-led-repro/',
+          'https://www.virivkyonline.sk/wifi-modul/',
+          'https://www.virivkyonline.sk/barovy-stol-pre-virivku/',
+          'https://www.virivkyonline.sk/projektor-byintek-p20-dlp-3d-4k-android-os/'
+        ]
+      },
+      {
+        id: 'chemistry-filters',
+        title: 'Chémia a filtre',
+        description: 'Bezchlórová chémia, testery, filtre, čističe a príslušenstvo k údržbe víriviek.',
+        urls: [
+          'https://www.virivkyonline.sk/udrzba-virivky-bezchlorova-chemia-platinum-lech-spa/',
+          'https://www.virivkyonline.sk/h2o-clear/',
+          'https://www.virivkyonline.sk/filter-pre-virivku-maxi--puma-sun-antibakterialny/',
+          'https://www.virivkyonline.sk/vone-spa-line-fragrance/',
+          'https://www.virivkyonline.sk/filter-pre-virivku-split/',
+          'https://www.virivkyonline.sk/cistic-filtrov-viriviek/',
+          'https://www.virivkyonline.sk/h2o-spa-cleaner/',
+          'https://www.virivkyonline.sk/h2o-hardness-remover-1-l/',
+          'https://www.virivkyonline.sk/oxy-pure-ag-5l/',
+          'https://www.virivkyonline.sk/odpenovac-hth-1l/',
+          'https://www.virivkyonline.sk/absorpcna-spongia-do-viriviek-nasaje-necistoty-z-vody-vo-virivke/',
+          'https://www.virivkyonline.sk/compactal-gel/',
+          'https://www.virivkyonline.sk/https-www-virivkyonline-sk-p-614-digitalny-ph-tester/',
+          'https://www.virivkyonline.sk/vanicka-pre-cistenie-filtrov/',
+          'https://www.virivkyonline.sk/ph-minus/',
+          'https://www.virivkyonline.sk/cistic-termokrytu-clean-sport-spa/',
+          'https://www.virivkyonline.sk/kvapkovy-tester-pre-bezchlorovu-chemiu-duke-d/',
+          'https://www.virivkyonline.sk/plavacik-pre-tabletky/',
+          'https://www.virivkyonline.sk/revolucny-automaticky-cistic-filtrov-estelle-revolucny/'
+        ]
+      },
+      {
+        id: 'container-buildings',
+        title: 'Kontajnerové stavby – chaty, garáže, unimobunky',
+        description: 'Obytné kontajnery, showroomy, garáže a oceľové konštrukcie.',
+        urls: [
+          'https://www.virivkyonline.sk/obytny-kontajner-kancelaria-chatka/',
+          'https://www.virivkyonline.sk/modularny-kontajner-3-5--6-m-garaz/',
+          'https://www.virivkyonline.sk/modularny-kontajner-3--6-m-showroom/',
+          'https://www.virivkyonline.sk/ocelova-konstrukcia-pre-lodny-kontajner-unimobunku/'
+        ]
+      }
+    ];
+
+    const ZEALUX_VARIANTS = [
+      '11KW (229/11K)',
+      '14KW (229/14K)',
+      '17KW (229/17K)',
+      '21KW (229/21K)',
+      '26KW (229/26K)',
+      '30KW (229/30K)'
+    ];
+
+    const SLNECNIK_VARIANTS = [
+      'Antracit (232/ANT)',
+      'Šedá (232/SED)',
+      'Taupe (232/TAU)'
+    ];
+
+    const CONTAINER_COLOR_VALUES = ['Biela', 'Antracit', 'Drevodekor'];
+
+    let currentCategoryId = null;
+    let currentCategoryProducts = [];
+    let detailProduct = null;
+    let toastTimeout = null;
+    let adminClickCount = 0;
+    let adminClickTimer = null;
+
+    function showSection(name) {
+      const all = ['home', 'products', 'category', 'detail', 'favorites', 'cart', 'admin'];
+      all.forEach(section => {
+        document.getElementById('section-' + section).classList.remove('active');
       });
+
+      ['home', 'products', 'favorites', 'cart'].forEach(id => {
+        const tab = document.getElementById('tab-' + id);
+        if (tab) tab.classList.remove('active');
+      });
+
+      document.getElementById('section-' + name).classList.add('active');
+
+      const topMap = {
+        home: 'home',
+        products: 'products',
+        category: 'products',
+        detail: 'products',
+        favorites: 'favorites',
+        cart: 'cart',
+        admin: null
+      };
+
+      const activeTop = topMap[name];
+      if (activeTop) {
+        document.getElementById('tab-' + activeTop).classList.add('active');
+      }
     }
 
-    const feedResponse = await fetch(target, {
-      method: "GET",
-      headers: browserHeaders(target),
-      cf: { cacheTtl: 0, cacheEverything: false }
-    });
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message || 'Hotovo';
+      toast.classList.add('show');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
 
-    const text = await feedResponse.text();
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
 
-    return new Response(text, {
-      status: feedResponse.ok ? 200 : feedResponse.status,
-      headers: {
-        "Content-Type": "application/xml; charset=utf-8",
-        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-        "Pragma": "no-cache",
-        ...corsHeaders
+    function formatEur(value) {
+      const num = Number(value || 0);
+      if (!num) return 'Cena na vyžiadanie';
+      return `${num.toLocaleString('sk-SK')} €`;
+    }
+
+    function priceToDisplay(priceText) {
+      if (!priceText) return 'Cena na vyžiadanie';
+
+      const str = String(priceText).trim();
+
+      if (str.includes('€')) {
+        return str.replace(/\s+/g, ' ').trim();
       }
-    });
-  } catch (e) {
-    return new Response("Feed proxy error", {
-      status: 500,
-      headers: {
-        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-        "Pragma": "no-cache",
-        ...corsHeaders
-      }
-    });
-  }
-}
 
-async function handleProductDetail(url, corsHeaders) {
-  try {
-    const target = url.searchParams.get("url");
+      const parsed = parsePriceNumber(str);
+      if (parsed > 0) return formatEur(parsed);
 
-    if (!target) {
-      return jsonResponse(
-        { success: false, error: "Chyba: chyba url parameter." },
-        400,
-        corsHeaders
+      return str;
+    }
+
+    function parsePriceNumber(priceText) {
+      if (!priceText) return 0;
+      const cleaned = String(priceText)
+        .replace(/\u00A0/g, '')
+        .replace(/\s+/g, '')
+        .replace(',', '.')
+        .replace(/[^0-9.]/g, '');
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function getShortDescription(product) {
+      return (product.shortDescription || product.description || '').trim();
+    }
+
+    function sanitizeVariantName(name) {
+      return String(name || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function getCategoryById(id) {
+      return CATEGORIES.find(c => c.id === id) || null;
+    }
+
+    function isZealux(product) {
+      const key = (String(product?.url || '') + ' ' + String(product?.title || '')).toLowerCase();
+      return key.includes('tepelne-cerpadlo-zealux') || key.includes('zealux');
+    }
+
+    function isSlnecnik(product) {
+      const key = (String(product?.url || '') + ' ' + String(product?.title || '')).toLowerCase();
+      return key.includes('konzolovy-slnecnik') || key.includes('slnecnik') || key.includes('slnečník');
+    }
+
+    function isContainerColorProduct(product) {
+      const key = (String(product?.url || '') + ' ' + String(product?.title || '')).toLowerCase();
+      return (
+        key.includes('obytny-kontajner-kancelaria-chatka') ||
+        key.includes('modularny-kontajner-3-5--6-m-garaz') ||
+        key.includes('modularny-kontajner-3--6-m-showroom')
       );
     }
 
-    const normalizedUrl = normalizeProductUrl(target);
-    const variantsToTry = buildUrlVariants(normalizedUrl);
+    function getSelectedGenericVariants() {
+      const selects = document.querySelectorAll('.generic-variant');
+      const items = [];
 
-    let lastStatus = 0;
-    let lastText = "";
-    let lastUrlUsed = normalizedUrl;
-    let lastError = "";
+      selects.forEach(select => {
+        const name = select.getAttribute('data-variant-name') || '';
+        const value = select.value || '';
+        if (name && value) items.push({ name, value });
+      });
 
-    for (const tryUrl of variantsToTry) {
+      return items;
+    }
+
+    function collectGenericVariantText() {
+      return getSelectedGenericVariants()
+        .map(item => `${item.name}: ${item.value}`)
+        .join(' | ');
+    }
+
+    function resolveCurrentDetailPrice() {
+      if (!detailProduct) return 'Cena na vyžiadanie';
+      return priceToDisplay(detailProduct.price);
+    }
+
+    function updateDetailPriceBySelection() {
+      if (!detailProduct) return;
+      document.getElementById('detail-price').textContent = resolveCurrentDetailPrice();
+    }
+
+    function getInstallId() {
+      let installId = localStorage.getItem('pls_install_id');
+      if (!installId) {
+        installId = 'install_' + Date.now() + '_' + Math.random().toString(36).slice(2, 12);
+        localStorage.setItem('pls_install_id', installId);
+      }
+      return installId;
+    }
+
+    async function sendAppPing() {
       try {
-        const response = await fetch(tryUrl, {
-          method: "GET",
-          redirect: "follow",
-          headers: browserHeaders(tryUrl),
-          cf: { cacheTtl: 0, cacheEverything: false }
+        await fetch(API_BASE + '/app-ping', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            installId: getInstallId(),
+            appName: 'Platinum Lech Spa',
+            appVersion: '1.0.0',
+            platform: navigator.platform || '',
+            userAgent: navigator.userAgent || ''
+          })
         });
-
-        const text = await response.text();
-        lastStatus = response.status;
-        lastText = text;
-        lastUrlUsed = tryUrl;
-
-        const product = safeParseProductHtml(text, tryUrl);
-
-        return jsonResponse(
-          {
-            success: true,
-            workerVersion: "safe-parser-v2",
-            product
-          },
-          200,
-          corsHeaders
-        );
-      } catch (err) {
-        lastError = String(err && err.message ? err.message : err || "");
-      }
-    }
-
-    return jsonResponse(
-      {
-        success: false,
-        error: "Nepodarilo sa nacitat stranku produktu.",
-        detail: "HTTP " + (lastStatus || 0),
-        debugUrl: lastUrlUsed,
-        debugError: lastError,
-        debugSnippet: stripTags(lastText || "").slice(0, 500)
-      },
-      500,
-      corsHeaders
-    );
-  } catch (e) {
-    return jsonResponse(
-      {
-        success: false,
-        error: "Chyba servera pri nacitani detailu produktu."
-      },
-      500,
-      corsHeaders
-    );
-  }
-}
-
-function safeParseProductHtml(html, productUrl) {
-  const cleanedHtml = removeScriptsAndStyles(html || "");
-
-  let title = "";
-  let metaDescription = "";
-  let gallery = [];
-  let mainImage = "";
-  let price = "";
-  let description = "";
-  let shortDescription = "";
-  let variants = { oblozenie: [], akryl: [], generic: [] };
-
-  try {
-    title = decodeHtmlEntities(
-      firstMatch(cleanedHtml, /<h1[^>]*>([\s\S]*?)<\/h1>/i) ||
-      firstMatch(cleanedHtml, /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"]+)["']/i) ||
-      firstMatch(cleanedHtml, /<title[^>]*>([\s\S]*?)<\/title>/i) ||
-      "Produkt"
-    ).trim();
-  } catch (e) {
-    title = "Produkt";
-  }
-
-  try {
-    metaDescription = decodeHtmlEntities(
-      firstMatch(cleanedHtml, /<meta[^>]+name=["']description["'][^>]+content=["']([^"]+)["']/i) || ""
-    ).trim();
-  } catch (e) {
-    metaDescription = "";
-  }
-
-  try {
-    gallery = extractGalleryImages(cleanedHtml, productUrl);
-    mainImage = gallery[0] || "";
-  } catch (e) {
-    gallery = [];
-    mainImage = "";
-  }
-
-  try {
-    price =
-      decodeHtmlEntities(
-        firstMatch(cleanedHtml, /<meta[^>]+property=["']product:price:amount["'][^>]+content=["']([^"]+)["']/i) || ""
-      ).trim() ||
-      findPriceInHtml(cleanedHtml);
-  } catch (e) {
-    price = "";
-  }
-
-  try {
-    description = extractFullDescription(cleanedHtml, metaDescription);
-  } catch (e) {
-    description = metaDescription || "";
-  }
-
-  try {
-    shortDescription = buildShortDescription(description, metaDescription);
-  } catch (e) {
-    shortDescription = metaDescription || "";
-  }
-
-  try {
-    variants = extractVariants(cleanedHtml);
-  } catch (e) {
-    variants = { oblozenie: [], akryl: [], generic: [] };
-  }
-
-  try {
-    variants = applyVariantFallbacks(productUrl, variants, title, description);
-  } catch (e) {}
-
-  return {
-    url: productUrl,
-    title: title || "Produkt",
-    price: price || "",
-    image: mainImage || "",
-    gallery: gallery.length ? gallery : (mainImage ? [mainImage] : []),
-    shortDescription: shortDescription || "",
-    description: description || metaDescription || "",
-    variants: {
-      oblozenie: Array.isArray(variants?.oblozenie) ? variants.oblozenie : [],
-      akryl: Array.isArray(variants?.akryl) ? variants.akryl : [],
-      generic: Array.isArray(variants?.generic) ? variants.generic : []
-    }
-  };
-}
-
-async function handleAppPing(request, env, corsHeaders) {
-  try {
-    if (!ENABLE_INSTALL_TRACKING) {
-      return jsonResponse({ success: true, disabled: true }, 200, corsHeaders);
-    }
-
-    if (!env.INSTALL_STATS) {
-      return jsonResponse(
-        { success: false, error: "Chyba: KV binding INSTALL_STATS nie je nastaveny." },
-        500,
-        corsHeaders
-      );
-    }
-
-    const data = await request.json();
-
-    const installId = String(data.installId || "").trim();
-    const appName = String(data.appName || "Platinum Lech Spa").trim();
-    const appVersion = String(data.appVersion || "1.0.0").trim();
-    const platform = String(data.platform || "").trim();
-    const userAgent = String(data.userAgent || "").trim();
-
-    if (!installId) {
-      return jsonResponse(
-        { success: false, error: "Chyba: installId chyba." },
-        400,
-        corsHeaders
-      );
-    }
-
-    const now = Date.now();
-    const today = new Date(now).toISOString().slice(0, 10);
-
-    const record = {
-      installId,
-      appName,
-      appVersion,
-      platform,
-      userAgent,
-      firstSeen: now,
-      lastSeen: now,
-      lastSeenDate: today
-    };
-
-    const key = "install:" + installId;
-    const existingRaw = await env.INSTALL_STATS.get(key);
-
-    if (existingRaw) {
-      try {
-        const existing = JSON.parse(existingRaw);
-        record.firstSeen = existing.firstSeen || now;
       } catch (e) {}
     }
 
-    await env.INSTALL_STATS.put(key, JSON.stringify(record));
+    async function fetchProductDetail(url) {
+      const bust = Date.now() + '_' + Math.random().toString(36).slice(2);
 
-    return jsonResponse(
-      {
-        success: true,
-        tracked: true,
-        installId
-      },
-      200,
-      corsHeaders
-    );
-  } catch (e) {
-    return jsonResponse(
-      {
-        success: false,
-        error: "Chyba pri ukladani app aktivity."
-      },
-      500,
-      corsHeaders
-    );
-  }
-}
-
-async function handleAdminStats(url, env, corsHeaders) {
-  try {
-    const pin = String(url.searchParams.get("pin") || "").trim();
-
-    if (pin !== ADMIN_PIN) {
-      return jsonResponse(
-        { success: false, error: "Neplatny PIN." },
-        403,
-        corsHeaders
+      const response = await fetch(
+        API_BASE + '/product-detail?url=' + encodeURIComponent(url) + '&_=' + bust,
+        { method: 'GET', cache: 'no-store' }
       );
-    }
 
-    if (!env.INSTALL_STATS) {
-      return jsonResponse(
-        { success: false, error: "Chyba: KV binding INSTALL_STATS nie je nastaveny." },
-        500,
-        corsHeaders
-      );
-    }
+      const text = await response.text();
 
-    const now = Date.now();
-    const oneDay = 24 * 60 * 60 * 1000;
-    const sevenDays = 7 * oneDay;
-    const thirtyDays = 30 * oneDay;
-    const oneEightyDays = 180 * oneDay;
-    const threeSixtyFiveDays = 365 * oneDay;
-
-    let cursor = undefined;
-    let total = 0;
-    let activeToday = 0;
-    let active7d = 0;
-    let active30d = 0;
-    let active180d = 0;
-    let active365d = 0;
-
-    do {
-      const list = await env.INSTALL_STATS.list({
-        prefix: "install:",
-        cursor
-      });
-
-      for (const item of list.keys) {
-        const raw = await env.INSTALL_STATS.get(item.name);
-        if (!raw) continue;
-
-        try {
-          const rec = JSON.parse(raw);
-          const lastSeen = Number(rec.lastSeen || 0);
-          if (!lastSeen) continue;
-
-          total += 1;
-
-          if (now - lastSeen <= oneDay) activeToday += 1;
-          if (now - lastSeen <= sevenDays) active7d += 1;
-          if (now - lastSeen <= thirtyDays) active30d += 1;
-          if (now - lastSeen <= oneEightyDays) active180d += 1;
-          if (now - lastSeen <= threeSixtyFiveDays) active365d += 1;
-        } catch (e) {}
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Worker nevrátil JSON.');
       }
 
-      cursor = list.list_complete ? undefined : list.cursor;
-    } while (cursor);
+      if (!response.ok || !data.success || !data.product) {
+        throw new Error(data?.error || 'Nepodarilo sa načítať detail produktu.');
+      }
 
-    return jsonResponse(
-      {
-        success: true,
-        workerVersion: "safe-parser-v2",
-        stats: {
-          totalInstalls: total,
-          activeToday,
-          active7d,
-          active30d,
-          active180d,
-          active365d
+      return data.product;
+    }
+
+    function renderCategories() {
+      const grid = document.getElementById('category-grid');
+      grid.innerHTML = '';
+
+      CATEGORIES.forEach(category => {
+        const card = document.createElement('div');
+        card.className = 'category-card';
+        card.innerHTML = `
+          <h3>${escapeHtml(category.title)}</h3>
+          <p>${escapeHtml(category.description)}</p>
+          <button class="btn" type="button">Otvoriť kategóriu</button>
+        `;
+        card.querySelector('button').addEventListener('click', () => openCategory(category.id));
+        grid.appendChild(card);
+      });
+    }
+
+    async function openCategory(categoryId) {
+      const category = getCategoryById(categoryId);
+      if (!category) return;
+
+      currentCategoryId = categoryId;
+      currentCategoryProducts = [];
+
+      document.getElementById('category-title').textContent = category.title;
+      document.getElementById('status-category').textContent = 'Načítavam produkty...';
+      document.getElementById('products-grid').innerHTML = '';
+      document.getElementById('products-empty').style.display = 'none';
+
+      showSection('category');
+
+      const results = await Promise.allSettled(
+        category.urls.map(url => fetchProductDetail(url))
+      );
+
+      const okProducts = [];
+      let failedCount = 0;
+
+      results.forEach(result => {
+        if (result.status === 'fulfilled') okProducts.push(result.value);
+        else failedCount += 1;
+      });
+
+      currentCategoryProducts = okProducts;
+      renderProducts(currentCategoryProducts);
+
+      if (!currentCategoryProducts.length) {
+        document.getElementById('status-category').textContent = 'Nepodarilo sa načítať žiadne produkty.';
+        const empty = document.getElementById('products-empty');
+        empty.style.display = 'block';
+        empty.textContent = 'Žiadne produkty sa nepodarilo načítať.';
+        return;
+      }
+
+      if (failedCount > 0) {
+        document.getElementById('status-category').textContent =
+          `Načítané produkty: ${currentCategoryProducts.length}. Niektoré produkty sa nepodarilo načítať (${failedCount}).`;
+      } else {
+        document.getElementById('status-category').textContent =
+          `Načítané produkty: ${currentCategoryProducts.length}`;
+      }
+    }
+
+    function renderProducts(products) {
+      const grid = document.getElementById('products-grid');
+      const empty = document.getElementById('products-empty');
+
+      grid.innerHTML = '';
+
+      if (!products.length) {
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+
+      products.forEach(product => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+
+        const imageHtml = product.image
+          ? `<div class="product-image-wrap"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"></div>`
+          : `<div class="product-image-wrap"><span style="color:#cfd6e2;font-size:14px;">Bez obrázka</span></div>`;
+
+        card.innerHTML = `
+          ${imageHtml}
+          <div class="product-body">
+            <div class="product-title">${escapeHtml(product.title)}</div>
+            <div class="product-price">${escapeHtml(priceToDisplay(product.price))}</div>
+            <div class="product-desc">${escapeHtml(getShortDescription(product))}</div>
+            <div class="action-row">
+              <button class="btn" type="button">Otvoriť detail</button>
+            </div>
+          </div>
+        `;
+
+        card.querySelector('button').addEventListener('click', () => openDetailCard(product.url));
+        grid.appendChild(card);
+      });
+    }
+
+    async function openDetailCard(productUrl) {
+      showSection('detail');
+
+      const status = document.getElementById('status-detail');
+      const wrap = document.getElementById('detail-wrap');
+      const empty = document.getElementById('detail-empty');
+
+      wrap.style.display = 'none';
+      empty.style.display = 'none';
+      status.textContent = 'Načítavam detail produktu...';
+
+      try {
+        const product = await fetchProductDetail(productUrl);
+        detailProduct = product;
+        renderDetail(product);
+        wrap.style.display = 'block';
+        status.textContent = 'Detail načítaný.';
+      } catch (error) {
+        detailProduct = null;
+        status.textContent = 'Chyba pri načítaní detailu: ' + (error.message || 'Neznáma chyba');
+        empty.style.display = 'block';
+      }
+    }
+
+    function renderDetail(product) {
+      document.getElementById('detail-title').textContent = product.title || '';
+      document.getElementById('detail-description').textContent = product.description || product.shortDescription || '';
+
+      const mainImage = document.getElementById('detail-main-image');
+      if (product.image) {
+        mainImage.innerHTML = `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}">`;
+      } else {
+        mainImage.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#cfd6e2;">Bez obrázka</div>`;
+      }
+
+      const oblozenieWrap = document.getElementById('variant-oblozenie-wrap');
+      const akrylWrap = document.getElementById('variant-akryl-wrap');
+      const oblozenieSelect = document.getElementById('variant-oblozenie');
+      const akrylSelect = document.getElementById('variant-akryl');
+      const genericWrap = document.getElementById('generic-variants-wrap');
+
+      oblozenieSelect.innerHTML = '';
+      akrylSelect.innerHTML = '';
+      genericWrap.innerHTML = '';
+
+      const oblozenie = Array.isArray(product?.variants?.oblozenie) ? product.variants.oblozenie : [];
+      const akryl = Array.isArray(product?.variants?.akryl) ? product.variants.akryl : [];
+      const generic = Array.isArray(product?.variants?.generic) ? [...product.variants.generic] : [];
+
+      if (oblozenie.length) {
+        oblozenieWrap.style.display = 'block';
+        oblozenieSelect.innerHTML = oblozenie.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+      } else {
+        oblozenieWrap.style.display = 'none';
+      }
+
+      if (akryl.length) {
+        akrylWrap.style.display = 'block';
+        akrylSelect.innerHTML = akryl.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+      } else {
+        akrylWrap.style.display = 'none';
+      }
+
+      if (isZealux(product)) {
+        const hasVykon = generic.some(g => String(g?.name || '').toLowerCase().includes('výkon') || String(g?.name || '').toLowerCase().includes('vykon'));
+        if (!hasVykon) {
+          generic.push({ name: 'Výkon', values: ZEALUX_VARIANTS });
         }
-      },
-      200,
-      corsHeaders
-    );
-  } catch (e) {
-    return jsonResponse(
-      {
-        success: false,
-        error: "Chyba pri nacitani admin statistik."
-      },
-      500,
-      corsHeaders
-    );
-  }
-}
+      }
 
-function normalizeProductUrl(target) {
-  let parsed;
-  try {
-    parsed = new URL(target);
-  } catch {
-    throw new Error("Neplatna URL");
-  }
+      if (isSlnecnik(product)) {
+        const hasFarba = generic.some(g => String(g?.name || '').toLowerCase().includes('farba'));
+        if (!hasFarba) {
+          generic.push({ name: 'Farba', values: SLNECNIK_VARIANTS });
+        }
+      }
 
-  if (!/virivkyonline\.sk$/i.test(parsed.hostname)) {
-    throw new Error("Povolena je iba domena virivkyonline.sk");
-  }
+      if (isContainerColorProduct(product)) {
+        const hasFarba = generic.some(g => String(g?.name || '').toLowerCase().includes('farba'));
+        if (!hasFarba) {
+          generic.push({ name: 'Farba', values: CONTAINER_COLOR_VALUES });
+        }
+      }
 
-  parsed.protocol = "https:";
-  parsed.hostname = "www.virivkyonline.sk";
+      const genericSeen = new Set();
 
-  if (!parsed.pathname.endsWith("/")) {
-    parsed.pathname += "/";
-  }
+      generic.forEach(group => {
+        const name = sanitizeVariantName(group?.name || '');
+        const values = Array.isArray(group?.values) ? group.values.filter(v => String(v || '').trim()) : [];
+        if (!name || !values.length) return;
 
-  return parsed.toString();
-}
+        const lower = name.toLowerCase();
 
-function buildUrlVariants(url) {
-  const u = new URL(url);
-  const variants = new Set();
+        if (
+          lower.includes('farba obloženia') ||
+          lower.includes('farba oblozenia') ||
+          lower.includes('obloženie') ||
+          lower.includes('oblozenie') ||
+          lower.includes('farba akrylu') ||
+          lower === 'akryl'
+        ) {
+          return;
+        }
 
-  variants.add(u.toString());
+        const key = lower + '|' + values.join('|').toLowerCase();
+        if (genericSeen.has(key)) return;
+        genericSeen.add(key);
 
-  const noSlash = new URL(u.toString());
-  noSlash.pathname = noSlash.pathname.replace(/\/+$/, "");
-  variants.add(noSlash.toString());
-
-  const withSlash = new URL(noSlash.toString());
-  withSlash.pathname = withSlash.pathname + "/";
-  variants.add(withSlash.toString());
-
-  return [...variants];
-}
-
-function browserHeaders(url) {
-  return {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "sk-SK,sk;q=0.9,en;q=0.8",
-    "Cache-Control": "no-cache",
-    "Pragma": "no-cache",
-    "Referer": url,
-    "Upgrade-Insecure-Requests": "1"
-  };
-}
-
-function removeScriptsAndStyles(html) {
-  return String(html || "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, "");
-}
-
-function firstMatch(text, regex) {
-  const m = text.match(regex);
-  return m && m[1] ? m[1] : "";
-}
-
-function stripTags(text) {
-  return decodeHtmlEntities(
-    String(text || "")
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/p>/gi, "\n")
-      .replace(/<\/div>/gi, "\n")
-      .replace(/<\/li>/gi, "\n")
-      .replace(/<li[^>]*>/gi, "- ")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\u00a0/g, " ")
-      .replace(/[ \t]+/g, " ")
-      .replace(/\n[ \t]+/g, "\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim()
-  );
-}
-
-function decodeHtmlEntities(text) {
-  return String(text || "")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#039;/gi, "'")
-    .replace(/&apos;/gi, "'")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">");
-}
-
-function absolutizeUrl(url, base) {
-  try {
-    return new URL(url, base).toString();
-  } catch {
-    return "";
-  }
-}
-
-function extractGalleryImages(html, baseUrl) {
-  const results = [];
-
-  const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
-  if (ogImage) {
-    const fullOg = absolutizeUrl(ogImage, baseUrl);
-    if (fullOg) results.push(fullOg);
-  }
-
-  const imageRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-  let match;
-
-  while ((match = imageRegex.exec(html)) !== null) {
-    const raw = match[1] || "";
-    const full = absolutizeUrl(raw, baseUrl);
-    if (!full) continue;
-
-    const lower = full.toLowerCase();
-
-    if (
-      !lower.includes(".jpg") &&
-      !lower.includes(".jpeg") &&
-      !lower.includes(".png") &&
-      !lower.includes(".webp")
-    ) continue;
-
-    if (
-      lower.includes("logo") ||
-      lower.includes("icon") ||
-      lower.includes("favicon") ||
-      lower.includes("placeholder") ||
-      lower.includes("gift") ||
-      lower.includes("house") ||
-      lower.includes("home-icon") ||
-      lower.includes("filter") ||
-      lower.includes("spa-line") ||
-      lower.includes("chemia") ||
-      lower.includes("tablety")
-    ) continue;
-
-    if (
-      lower.includes("virivka") ||
-      lower.includes("myshoptet") ||
-      lower.includes("cdn.myshoptet.com") ||
-      lower.includes("/shop/big/")
-    ) {
-      results.push(full);
-    }
-  }
-
-  return [...new Set(results)].slice(0, 6);
-}
-
-function findPriceInHtml(html) {
-  const text = stripTags(html);
-  const eurMatch = text.match(/(?:od\s*)?€\s*[0-9][0-9\s.,]*/i);
-  if (eurMatch) return eurMatch[0].replace(/\s+/g, " ").trim();
-
-  const eurAfterMatch = text.match(/(?:od\s*)?[0-9][0-9\s.,]*\s*€/i);
-  if (eurAfterMatch) return eurAfterMatch[0].replace(/\s+/g, " ").trim();
-
-  return "";
-}
-
-function extractFullDescription(html, fallback) {
-  const candidates = [
-    /<div[^>]*class=["'][^"']*description-inner[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
-    /<div[^>]*class=["'][^"']*product-description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
-    /<div[^>]*class=["'][^"']*detail-description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
-    /<div[^>]*id=["'][^"']*description[^"']*["'][^>]*>([\s\S]*?)<\/div>/i,
-    /<section[^>]*class=["'][^"']*description[^"']*["'][^>]*>([\s\S]*?)<\/section>/i
-  ];
-
-  for (const regex of candidates) {
-    const found = firstMatch(html, regex);
-    const stripped = cleanDescriptionText(stripTags(found));
-    if (stripped && stripped.length > 80) return stripped;
-  }
-
-  return cleanDescriptionText(fallback || "");
-}
-
-function cleanDescriptionText(text) {
-  return String(text || "")
-    .replace(/^\s*Popis\s*/i, "")
-    .replace(/\bZdieľať\b.*$/i, "")
-    .replace(/\bTweet\b.*$/i, "")
-    .replace(/\bKód:\b.*$/i, "")
-    .replace(/\bStrážny pes\b.*$/i, "")
-    .replace(/\bSúvisiaci tovar\b[\s\S]*$/i, "")
-    .replace(/\bSuvisejici zbozi\b[\s\S]*$/i, "")
-    .replace(/\bHodnotenie produktu\b[\s\S]*$/i, "")
-    .replace(/\bDiskusia\b[\s\S]*$/i, "")
-    .replace(/\bParametre\b[\s\S]*$/i, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
-function buildShortDescription(description, fallback) {
-  const source = String(description || fallback || "").trim();
-  if (!source) return "";
-
-  const normalized = source.replace(/\n+/g, " ").replace(/\s+/g, " ").trim();
-  if (normalized.length <= 220) return normalized;
-
-  return normalized.slice(0, 217).trim() + "...";
-}
-
-function extractVariants(html) {
-  const selects = extractGenericSelectVariants(html);
-  const textGroups = extractTextVariants(stripTags(html));
-  const merged = dedupeVariantGroups([...selects, ...textGroups]);
-
-  const oblozenie = findVariantValuesByName(merged, [
-    "farba obloženia a schodíkov",
-    "farba oblozenia a schodikov",
-    "farba obloženia",
-    "farba oblozenia",
-    "obloženie",
-    "oblozenie"
-  ]);
-
-  const akryl = findVariantValuesByName(merged, [
-    "farba akrylu na výber",
-    "farba akrylu na vyber",
-    "farba akrylu",
-    "akryl"
-  ]);
-
-  return {
-    oblozenie,
-    akryl,
-    generic: merged
-  };
-}
-
-function extractTextVariants(plainText) {
-  const text = String(plainText || "").replace(/\r/g, "");
-
-  const patterns = [
-    {
-      name: "Farba",
-      regex: /Farba\s+Zvoľte variant\s+(.+?)(?:\n\s*Zvolený variant|\n\s*Kód:|\n\s*€|$)/i
-    },
-    {
-      name: "Výkon",
-      regex: /V[ÝY]KON\s+Zvoľte variant\s+(.+?)(?:\n\s*Zvolený variant|\n\s*Kód:|\n\s*€|$)/i
-    },
-    {
-      name: "Rozmer",
-      regex: /Rozmer\s+Zvoľte variant\s+(.+?)(?:\n\s*Zvolený variant|\n\s*Kód:|\n\s*€|$)/i
-    },
-    {
-      name: "Typ",
-      regex: /Typ\s+Zvoľte variant\s+(.+?)(?:\n\s*Zvolený variant|\n\s*Kód:|\n\s*€|$)/i
-    }
-  ];
-
-  const groups = [];
-
-  for (const pattern of patterns) {
-    const m = text.match(pattern.regex);
-    if (!m || !m[1]) continue;
-    const values = splitVariantValues(m[1]);
-    if (values.length) groups.push({ name: pattern.name, values });
-  }
-
-  return groups;
-}
-
-function splitVariantValues(rawText) {
-  const text = String(rawText || "").replace(/\s+/g, " ").trim();
-  if (!text) return [];
-
-  const tokens = text.split(" ").map(x => x.trim()).filter(Boolean);
-  const values = [];
-
-  for (const token of tokens) {
-    if (
-      /^zvoľte$/i.test(token) ||
-      /^zvolte$/i.test(token) ||
-      /^variant$/i.test(token) ||
-      /^reset$/i.test(token) ||
-      /^vybraných$/i.test(token) ||
-      /^vybranych$/i.test(token) ||
-      /^parametrov\.?$/i.test(token)
-    ) {
-      continue;
-    }
-    values.push(token);
-  }
-
-  return [...new Set(values)];
-}
-
-function extractGenericSelectVariants(html) {
-  const results = [];
-  const selectRegex = /<select([^>]*)>([\s\S]*?)<\/select>/gi;
-  let match;
-
-  while ((match = selectRegex.exec(html)) !== null) {
-    const selectAttrs = match[1] || "";
-    const selectHtml = match[0] || "";
-    const values = extractOptionsFromSelect(selectHtml);
-    if (!values.length) continue;
-
-    const name =
-      extractSelectLabel(html, match.index) ||
-      extractAttr(selectAttrs, "name") ||
-      extractAttr(selectAttrs, "id") ||
-      "Variant";
-
-    results.push({
-      name: cleanVariantName(name),
-      values: [...new Set(values)]
-    });
-  }
-
-  return dedupeVariantGroups(results);
-}
-
-function extractSelectLabel(html, selectIndex) {
-  const before = html.slice(Math.max(0, selectIndex - 1500), selectIndex);
-
-  const labelMatches = [...before.matchAll(/<label[^>]*>([\s\S]*?)<\/label>/gi)];
-  if (labelMatches.length) {
-    const last = labelMatches[labelMatches.length - 1];
-    const text = stripTags(last[1] || "").trim();
-    if (text) return text;
-  }
-
-  const strongMatches = [...before.matchAll(/<(strong|b|span|div)[^>]*>([\s\S]*?)<\/\1>/gi)];
-  for (let i = strongMatches.length - 1; i >= 0; i--) {
-    const text = stripTags(strongMatches[i][2] || "").trim();
-    if (
-      text &&
-      text.length < 80 &&
-      !/do košíka/i.test(text) &&
-      !/do kosika/i.test(text) &&
-      !/kód/i.test(text) &&
-      !/kod/i.test(text) &&
-      !/cena/i.test(text)
-    ) {
-      return text;
-    }
-  }
-
-  return "";
-}
-
-function extractAttr(attrs, attrName) {
-  const regex = new RegExp(attrName + `=["']([^"']+)["']`, "i");
-  const m = attrs.match(regex);
-  return m && m[1] ? m[1].trim() : "";
-}
-
-function cleanVariantName(name) {
-  return String(name || "")
-    .replace(/\s+/g, " ")
-    .replace(/:+$/, "")
-    .trim();
-}
-
-function dedupeVariantGroups(groups) {
-  const map = new Map();
-
-  for (const group of groups) {
-    const key = (group.name || "Variant").toLowerCase().trim();
-    if (!map.has(key)) {
-      map.set(key, {
-        name: group.name || "Variant",
-        values: [...group.values]
+        const block = document.createElement('div');
+        block.className = 'variant-block';
+        block.innerHTML = `
+          <div class="variant-label">${escapeHtml(name)}</div>
+          <select class="variant-select generic-variant" data-variant-name="${escapeHtml(name)}">
+            ${values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('')}
+          </select>
+        `;
+        genericWrap.appendChild(block);
       });
-    } else {
-      const existing = map.get(key);
-      existing.values = [...new Set([...existing.values, ...group.values])];
+
+      document.querySelectorAll('.generic-variant').forEach(select => {
+        select.addEventListener('change', updateDetailPriceBySelection);
+      });
+
+      document.getElementById('detail-qty').value = 1;
+      updateDetailPriceBySelection();
     }
-  }
 
-  return [...map.values];
-}
-
-function findVariantValuesByName(groups, names) {
-  for (const group of groups) {
-    const gname = (group.name || "").toLowerCase();
-    if (names.some(name => gname.includes(name))) {
-      return group.values || [];
+    function backToCurrentCategory() {
+      if (currentCategoryId) {
+        showSection('category');
+      } else {
+        showSection('products');
+      }
     }
-  }
-  return [];
-}
 
-function extractOptionsFromSelect(selectHtml) {
-  const options = [];
-  const optionRegex = /<option[^>]*value=["']?([^"'>]*)["']?[^>]*>([\s\S]*?)<\/option>/gi;
-  let m;
+    function getCart() {
+      try {
+        return JSON.parse(localStorage.getItem('platinum_cart') || '[]');
+      } catch {
+        return [];
+      }
+    }
 
-  while ((m = optionRegex.exec(selectHtml)) !== null) {
-    const value = stripTags(m[1] || "").trim();
-    const label = stripTags(m[2] || "").trim();
-    const finalValue = label || value;
+    function saveCart(cart) {
+      localStorage.setItem('platinum_cart', JSON.stringify(cart));
+    }
 
-    if (!finalValue) continue;
-    if (/zvoľte/i.test(finalValue)) continue;
-    if (/zvolte/i.test(finalValue)) continue;
-    if (/vyberte/i.test(finalValue)) continue;
-    if (/reset/i.test(finalValue)) continue;
-    if (/vybraných parametrov/i.test(finalValue)) continue;
-    if (/vybranych parametrov/i.test(finalValue)) continue;
+    function addDetailToCart() {
+      if (!detailProduct) return;
 
-    options.push(finalValue);
-  }
+      const qty = Math.max(1, parseInt(document.getElementById('detail-qty').value || '1', 10));
+      const oblozenieEl = document.getElementById('variant-oblozenie');
+      const akrylEl = document.getElementById('variant-akryl');
 
-  return [...new Set(options)];
-}
+      const item = {
+        id: detailProduct.url + '|' + collectGenericVariantText() + '|' + (oblozenieEl?.value || '') + '|' + (akrylEl?.value || ''),
+        url: detailProduct.url,
+        title: detailProduct.title,
+        price: resolveCurrentDetailPrice(),
+        image: detailProduct.image || '',
+        qty,
+        oblozenie: oblozenieEl && oblozenieEl.parentElement.style.display !== 'none' ? oblozenieEl.value : '',
+        akryl: akrylEl && akrylEl.parentElement.style.display !== 'none' ? akrylEl.value : '',
+        variantText: collectGenericVariantText()
+      };
 
-function applyVariantFallbacks(productUrl, variants, title = "", description = "") {
-  const url = String(productUrl || "").toLowerCase();
-  const ttl = String(title || "").toLowerCase();
-  const desc = String(description || "").toLowerCase();
-  const joined = `${url} ${ttl} ${desc}`;
+      const cart = getCart();
+      cart.push(item);
+      saveCart(cart);
+      renderCart();
+      showToast('Pridané do košíka');
+    }
 
-  const safeVariants = {
-    oblozenie: Array.isArray(variants?.oblozenie) ? [...variants.oblozenie] : [],
-    akryl: Array.isArray(variants?.akryl) ? [...variants.akryl] : [],
-    generic: Array.isArray(variants?.generic) ? [...variants.generic] : []
-  };
+    function removeCartItem(index) {
+      const cart = getCart();
+      cart.splice(index, 1);
+      saveCart(cart);
+      renderCart();
+    }
 
-  function hasGenericName(names) {
-    return safeVariants.generic.some(g => {
-      const n = String(g?.name || "").toLowerCase().trim();
-      return names.some(x => n.includes(x));
-    });
-  }
+    function updateCartQty(index, qty) {
+      const cart = getCart();
+      if (!cart[index]) return;
+      cart[index].qty = Math.max(1, parseInt(qty || 1, 10));
+      saveCart(cart);
+      renderCart();
+    }
 
-  const isHotTub =
-    joined.includes("virivka") ||
-    joined.includes("vírivka") ||
-    joined.includes("swim spa") ||
-    joined.includes("wellness");
+    function clearCart() {
+      localStorage.removeItem('platinum_cart');
+      renderCart();
+      document.getElementById('order-status').textContent = 'Košík bol vymazaný.';
+      showToast('Košík vymazaný');
+    }
 
-  if (isHotTub) {
-    if (!safeVariants.oblozenie.length) safeVariants.oblozenie = [...HOT_TUB_OBLOZENIE];
-    if (!safeVariants.akryl.length) safeVariants.akryl = [...HOT_TUB_AKRYL];
-  }
+    function renderCart() {
+      const cart = getCart();
+      const list = document.getElementById('cart-list');
+      const totalEl = document.getElementById('cart-total');
 
-  if (
-    joined.includes("slnecnik") ||
-    joined.includes("slnečník") ||
-    joined.includes("270 x 270") ||
-    joined.includes("konzolovy") ||
-    joined.includes("konzolový")
-  ) {
-    if (!hasGenericName(["farba"])) {
-      safeVariants.generic.push({
-        name: "Farba",
-        values: [...SLNECNIK_VARIANTS]
+      list.innerHTML = '';
+
+      if (!cart.length) {
+        list.innerHTML = '<div class="empty-state">Košík je zatiaľ prázdny.</div>';
+        totalEl.textContent = 'Spolu: 0 €';
+        return;
+      }
+
+      let total = 0;
+
+      cart.forEach((item, index) => {
+        const price = parsePriceNumber(item.price);
+        const qty = Math.max(1, parseInt(item.qty || 1, 10));
+        total += price * qty;
+
+        const div = document.createElement('div');
+        div.className = 'cart-item';
+        div.innerHTML = `
+          <div class="cart-thumb">
+            ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}">` : ''}
+          </div>
+          <div>
+            <div class="cart-title">${escapeHtml(item.title)}</div>
+            <div class="cart-meta">
+              Cena: ${escapeHtml(priceToDisplay(item.price))}<br>
+              ${item.oblozenie ? 'Farba obloženia: ' + escapeHtml(item.oblozenie) + '<br>' : ''}
+              ${item.akryl ? 'Farba akrylu: ' + escapeHtml(item.akryl) + '<br>' : ''}
+              ${item.variantText ? 'Variant: ' + escapeHtml(item.variantText) + '<br>' : ''}
+            </div>
+            <div class="inline-row">
+              <input class="qty-input" type="number" min="1" value="${qty}" onchange="updateCartQty(${index}, this.value)">
+              <button class="btn danger" type="button" onclick="removeCartItem(${index})">Odstrániť</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+
+      totalEl.textContent = 'Spolu: ' + formatEur(total);
+    }
+
+    function getFavorites() {
+      try {
+        return JSON.parse(localStorage.getItem('platinum_favorites') || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function saveFavorites(favorites) {
+      localStorage.setItem('platinum_favorites', JSON.stringify(favorites));
+    }
+
+    function saveDetailToFavorites() {
+      if (!detailProduct) return;
+
+      const oblozenieEl = document.getElementById('variant-oblozenie');
+      const akrylEl = document.getElementById('variant-akryl');
+
+      const item = {
+        id: detailProduct.url + '|' + collectGenericVariantText() + '|' + (oblozenieEl?.value || '') + '|' + (akrylEl?.value || ''),
+        url: detailProduct.url,
+        title: detailProduct.title,
+        price: resolveCurrentDetailPrice(),
+        image: detailProduct.image || '',
+        oblozenie: oblozenieEl && oblozenieEl.parentElement.style.display !== 'none' ? oblozenieEl.value : '',
+        akryl: akrylEl && akrylEl.parentElement.style.display !== 'none' ? akrylEl.value : '',
+        variantText: collectGenericVariantText()
+      };
+
+      const favorites = getFavorites();
+      const exists = favorites.some(f => f.id === item.id);
+
+      if (exists) {
+        showToast('Produkt už je v obľúbených');
+        return;
+      }
+
+      favorites.push(item);
+      saveFavorites(favorites);
+      renderFavorites();
+      showToast('Uložené do obľúbených');
+    }
+
+    function addFavoriteToCart(index) {
+      const favorites = getFavorites();
+      const item = favorites[index];
+      if (!item) return;
+
+      const cart = getCart();
+      cart.push({
+        ...item,
+        qty: 1
+      });
+      saveCart(cart);
+      renderCart();
+      showToast('Pridané do košíka');
+    }
+
+    function removeFavorite(index) {
+      const favorites = getFavorites();
+      favorites.splice(index, 1);
+      saveFavorites(favorites);
+      renderFavorites();
+    }
+
+    function clearFavorites() {
+      localStorage.removeItem('platinum_favorites');
+      renderFavorites();
+      showToast('Obľúbené vymazané');
+    }
+
+    function renderFavorites() {
+      const favorites = getFavorites();
+      const list = document.getElementById('favorites-list');
+      list.innerHTML = '';
+
+      if (!favorites.length) {
+        list.innerHTML = '<div class="empty-state">Zatiaľ nemáte uložené žiadne obľúbené produkty.</div>';
+        return;
+      }
+
+      favorites.forEach((item, index) => {
+        const safeUrl = String(item.url || '').replace(/'/g, "\\'");
+        const div = document.createElement('div');
+        div.className = 'favorite-item';
+        div.innerHTML = `
+          <div class="favorite-thumb">
+            ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}">` : ''}
+          </div>
+          <div>
+            <div class="favorite-title">${escapeHtml(item.title)}</div>
+            <div class="favorite-meta">
+              Cena: ${escapeHtml(priceToDisplay(item.price))}<br>
+              ${item.oblozenie ? 'Farba obloženia: ' + escapeHtml(item.oblozenie) + '<br>' : ''}
+              ${item.akryl ? 'Farba akrylu: ' + escapeHtml(item.akryl) + '<br>' : ''}
+              ${item.variantText ? 'Variant: ' + escapeHtml(item.variantText) + '<br>' : ''}
+            </div>
+            <div class="inline-row">
+              <button class="btn" type="button" onclick="addFavoriteToCart(${index})">Pridať do košíka</button>
+              <button class="btn secondary" type="button" onclick="openDetailCard('${safeUrl}')">Detail</button>
+              <button class="btn danger" type="button" onclick="removeFavorite(${index})">Odstrániť</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(div);
       });
     }
-  }
 
-  if (
-    joined.includes("zealux") ||
-    joined.includes("tepelne cerpadlo") ||
-    joined.includes("tepelné čerpadlo")
-  ) {
-    if (!hasGenericName(["výkon", "vykon"])) {
-      safeVariants.generic.push({
-        name: "Výkon",
-        values: [...ZEALUX_VARIANTS]
+    function getCustomerData() {
+      try {
+        return JSON.parse(localStorage.getItem('platinum_customer_data') || '{}');
+      } catch {
+        return {};
+      }
+    }
+
+    function saveCustomerData(data) {
+      localStorage.setItem('platinum_customer_data', JSON.stringify(data));
+    }
+
+    function fillCustomerData() {
+      const data = getCustomerData();
+      const ids = [
+        'order_name',
+        'order_email',
+        'order_phone',
+        'order_street',
+        'order_house_number',
+        'order_zip',
+        'order_city'
+      ];
+
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && data[id]) el.value = data[id];
       });
     }
-  }
 
-  return safeVariants;
-}
-
-async function handleContactForm(request, env, corsHeaders) {
-  try {
-    const data = await request.json();
-
-    const meno = (data.meno || "").trim();
-    const email = (data.email || "").trim();
-    const sprava = (data.sprava || "").trim();
-
-    if (!meno || !email || !sprava) {
-      return jsonResponse(
-        { success: false, error: "Vypln vsetky polia." },
-        400,
-        corsHeaders
-      );
+    function clearCustomerData() {
+      localStorage.removeItem('platinum_customer_data');
+      ['order_name','order_email','order_phone','order_street','order_house_number','order_zip','order_city','order_note']
+        .forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+      showToast('Údaje zákazníka vymazané');
     }
 
-    const html =
-      "<h2>Novy dopyt z formulara</h2>" +
-      "<p><strong>Meno:</strong> " + escapeHtml(meno) + "</p>" +
-      "<p><strong>Email:</strong> " + escapeHtml(email) + "</p>" +
-      "<p><strong>Sprava:</strong></p>" +
-      "<p>" + escapeHtml(sprava).replace(/\n/g, "<br>") + "</p>";
+    async function loadAdminStats() {
+      const status = document.getElementById('admin-status');
+      status.textContent = 'Načítavam admin štatistiky...';
 
-    const resendResponse = await sendEmail(env, {
-      from: "formular@send.e-bazarik.sk",
-      to: "info@virivkyonline.sk",
-      reply_to: email,
-      subject: "Novy kontaktny formular od: " + meno,
-      html
+      try {
+        const response = await fetch(
+          API_BASE + '/admin-stats?pin=' + encodeURIComponent(ADMIN_PIN) + '&_=' + Date.now(),
+          { method: 'GET', cache: 'no-store' }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success || !data.stats) {
+          alert('Nepodarilo sa načítať admin štatistiky.');
+          status.textContent = 'Chyba pri načítaní admin štatistík.';
+          return;
+        }
+
+        document.getElementById('admin-total').textContent = data.stats.totalInstalls || 0;
+        document.getElementById('admin-today').textContent = data.stats.activeToday || 0;
+        document.getElementById('admin-7d').textContent = data.stats.active7d || 0;
+        document.getElementById('admin-30d').textContent = data.stats.active30d || 0;
+        document.getElementById('admin-180d').textContent = data.stats.active180d || 0;
+        document.getElementById('admin-365d').textContent = data.stats.active365d || 0;
+
+        showSection('admin');
+        status.textContent = 'Admin štatistiky načítané.';
+      } catch (e) {
+        status.textContent = 'Chyba pri načítaní admin štatistík.';
+        alert('Chyba pri načítaní admin štatistík.');
+      }
+    }
+
+    function initHiddenAdmin() {
+      const logo = document.getElementById('adminLogo');
+      if (!logo) return;
+
+      logo.addEventListener('click', function() {
+        adminClickCount += 1;
+
+        if (adminClickTimer) clearTimeout(adminClickTimer);
+
+        adminClickTimer = setTimeout(() => {
+          adminClickCount = 0;
+        }, 1800);
+
+        if (adminClickCount >= 5) {
+          adminClickCount = 0;
+          const entered = prompt('Zadaj admin PIN');
+          if (entered === ADMIN_PIN) {
+            loadAdminStats();
+          } else if (entered !== null) {
+            alert('Nesprávny PIN');
+          }
+        }
+      });
+    }
+
+    document.getElementById('orderForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const cart = getCart();
+      const status = document.getElementById('order-status');
+
+      if (!cart.length) {
+        status.textContent = 'Košík je prázdny.';
+        return;
+      }
+
+      const meno = document.getElementById('order_name').value.trim();
+      const email = document.getElementById('order_email').value.trim();
+      const phone = document.getElementById('order_phone').value.trim();
+      const street = document.getElementById('order_street').value.trim();
+      const houseNumber = document.getElementById('order_house_number').value.trim();
+      const zip = document.getElementById('order_zip').value.trim();
+      const city = document.getElementById('order_city').value.trim();
+      const note = document.getElementById('order_note').value.trim();
+
+      if (!meno || !email || !phone || !street || !houseNumber || !zip || !city) {
+        status.textContent = 'Vyplň všetky povinné údaje.';
+        return;
+      }
+
+      const phoneClean = phone.replace(/\s+/g, '');
+      if (!/^09\d{8}$/.test(phoneClean)) {
+        status.textContent = 'Telefónne číslo musí mať 10 číslic a začínať na 09.';
+        return;
+      }
+
+      const zipClean = zip.replace(/\s+/g, '');
+      if (!/^\d{5}$/.test(zipClean)) {
+        status.textContent = 'PSČ musí mať 5 číslic.';
+        return;
+      }
+
+      saveCustomerData({
+        order_name: meno,
+        order_email: email,
+        order_phone: phoneClean,
+        order_street: street,
+        order_house_number: houseNumber,
+        order_zip: zipClean,
+        order_city: city
+      });
+
+      status.textContent = 'Odosielam objednávku...';
+
+      try {
+        const response = await fetch(API_BASE + '/order?_=order_' + Date.now(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            meno,
+            email,
+            phone: phoneClean,
+            street,
+            houseNumber,
+            zip: zipClean,
+            city,
+            note,
+            items: cart
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          status.textContent = 'Objednávka bola úspešne odoslaná.';
+          localStorage.removeItem('platinum_cart');
+          renderCart();
+          document.getElementById('order_note').value = '';
+          showToast('Objednávka odoslaná');
+        } else {
+          status.textContent = 'Chyba: ' + (data.detail || data.error || 'Odoslanie objednávky zlyhalo.');
+        }
+      } catch (error) {
+        status.textContent = 'Chyba spojenia so serverom.';
+      }
     });
 
-    if (!resendResponse.ok) {
-      const resendText = await resendResponse.text();
-      return jsonResponse(
-        {
-          success: false,
-          error: "Nepodarilo sa odoslat email.",
-          detail: resendText
-        },
-        500,
-        corsHeaders
-      );
-    }
-
-    return jsonResponse(
-      {
-        success: true,
-        message: "Formular bol uspesne odoslany."
-      },
-      200,
-      corsHeaders
-    );
-  } catch (e) {
-    return jsonResponse(
-      {
-        success: false,
-        error: "Chyba servera."
-      },
-      500,
-      corsHeaders
-    );
-  }
-}
-
-async function handleOrder(request, env, corsHeaders) {
-  try {
-    const data = await request.json();
-
-    const meno = (data.meno || "").trim();
-    const email = (data.email || "").trim();
-    const phone = (data.phone || "").trim();
-    const street = (data.street || "").trim();
-    const houseNumber = (data.houseNumber || "").trim();
-    const zip = (data.zip || "").trim();
-    const city = (data.city || "").trim();
-    const note = (data.note || "").trim();
-    const items = Array.isArray(data.items) ? data.items : [];
-
-    if (!meno || !email || !phone || !street || !houseNumber || !zip || !city || items.length === 0) {
-      return jsonResponse(
-        { success: false, error: "Vypln vsetky povinne udaje a pridaj produkty do kosika." },
-        400,
-        corsHeaders
-      );
-    }
-
-    const phoneClean = phone.replace(/\s+/g, "");
-    if (!/^09\d{8}$/.test(phoneClean)) {
-      return jsonResponse(
-        { success: false, error: "Telefonne cislo musi mat 10 cislic a zacinat na 09." },
-        400,
-        corsHeaders
-      );
-    }
-
-    const zipClean = zip.replace(/\s+/g, "");
-    if (!/^\d{5}$/.test(zipClean)) {
-      return jsonResponse(
-        { success: false, error: "PSC musi mat 5 cislic." },
-        400,
-        corsHeaders
-      );
-    }
-
-    let total = 0;
-    let itemsHtml = "";
-    let itemsCustomerHtml = "";
-
-    items.forEach((item, index) => {
-      const title = (item.title || "Produkt").trim();
-      const priceText = (item.price || "").trim();
-      const qty = Math.max(1, parseInt(item.qty || 1, 10));
-      const oblozenie = (item.oblozenie || "").trim();
-      const akryl = (item.akryl || "").trim();
-      const variantText = (item.variantText || "").trim();
-
-      const numericPrice = parsePriceNumber(priceText);
-      const rowTotal = numericPrice * qty;
-      total += rowTotal;
-
-      const row =
-        "<tr>" +
-          "<td style='padding:8px;border:1px solid #ddd;'>" + (index + 1) + "</td>" +
-          "<td style='padding:8px;border:1px solid #ddd;'>" + escapeHtml(title) + "</td>" +
-          "<td style='padding:8px;border:1px solid #ddd;'>" + escapeHtml(priceText || "Cena na vyziadanie") + "</td>" +
-          "<td style='padding:8px;border:1px solid #ddd;'>" + qty + "</td>" +
-          "<td style='padding:8px;border:1px solid #ddd;'>" + escapeHtml(oblozenie || "-") + "</td>" +
-          "<td style='padding:8px;border:1px solid #ddd;'>" + escapeHtml(akryl || "-") + "</td>" +
-          "<td style='padding:8px;border:1px solid #ddd;'>" + escapeHtml(variantText || "-") + "</td>" +
-          "<td style='padding:8px;border:1px solid #ddd;'>" + (numericPrice ? rowTotal.toFixed(2) + " €" : "-") + "</td>" +
-        "</tr>";
-
-      itemsHtml += row;
-      itemsCustomerHtml += row;
-    });
-
-    const addressHtml =
-      escapeHtml(street) + " " + escapeHtml(houseNumber) + "<br>" +
-      escapeHtml(zipClean) + " " + escapeHtml(city);
-
-    const adminHtml =
-      "<h2>Nova objednavka z aplikacie</h2>" +
-      "<p><strong>Meno:</strong> " + escapeHtml(meno) + "</p>" +
-      "<p><strong>Email:</strong> " + escapeHtml(email) + "</p>" +
-      "<p><strong>Telefon:</strong> " + escapeHtml(phoneClean) + "</p>" +
-      "<p><strong>Adresa dorucenia:</strong><br>" + addressHtml + "</p>" +
-      "<p><strong>Poznamka:</strong><br>" + escapeHtml(note || "-").replace(/\n/g, "<br>") + "</p>" +
-      "<h3>Produkty</h3>" +
-      "<table style='border-collapse:collapse;width:100%;font-family:Arial,sans-serif;'>" +
-        "<thead>" +
-          "<tr>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>#</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Produkt</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Cena</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Pocet</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba oblozenia</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba akrylu</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Dalsi variant</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Medzisucet</th>" +
-          "</tr>" +
-        "</thead>" +
-        "<tbody>" + itemsHtml + "</tbody>" +
-      "</table>" +
-      "<p style='margin-top:16px;'><strong>Celkom:</strong> " + total.toFixed(2) + " €</p>";
-
-    const customerHtml =
-      "<h2>Potvrdenie objednavky</h2>" +
-      "<p>Dakujeme za vasu objednavku. Kopia objednavky je nizsie.</p>" +
-      "<p><strong>Meno:</strong> " + escapeHtml(meno) + "</p>" +
-      "<p><strong>Telefon:</strong> " + escapeHtml(phoneClean) + "</p>" +
-      "<p><strong>Adresa dorucenia:</strong><br>" + addressHtml + "</p>" +
-      "<p><strong>Poznamka:</strong><br>" + escapeHtml(note || "-").replace(/\n/g, "<br>") + "</p>" +
-      "<h3>Produkty</h3>" +
-      "<table style='border-collapse:collapse;width:100%;font-family:Arial,sans-serif;'>" +
-        "<thead>" +
-          "<tr>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>#</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Produkt</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Cena</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Pocet</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba oblozenia</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Farba akrylu</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Dalsi variant</th>" +
-            "<th style='padding:8px;border:1px solid #ddd;text-align:left;'>Medzisucet</th>" +
-          "</tr>" +
-        "</thead>" +
-        "<tbody>" + itemsCustomerHtml + "</tbody>" +
-      "</table>" +
-      "<p style='margin-top:16px;'><strong>Celkom:</strong> " + total.toFixed(2) + " €</p>";
-
-    const adminResponse = await sendEmail(env, {
-      from: "formular@send.e-bazarik.sk",
-      to: "info@virivkyonline.sk",
-      reply_to: email,
-      subject: "Nova objednavka od: " + meno,
-      html: adminHtml
-    });
-
-    if (!adminResponse.ok) {
-      const resendText = await adminResponse.text();
-      return jsonResponse(
-        {
-          success: false,
-          error: "Nepodarilo sa odoslat objednavku.",
-          detail: resendText
-        },
-        500,
-        corsHeaders
-      );
-    }
-
-    const customerResponse = await sendEmail(env, {
-      from: "formular@send.e-bazarik.sk",
-      to: email,
-      subject: "Potvrdenie objednavky - Platinum Lech Spa",
-      html: customerHtml
-    });
-
-    if (!customerResponse.ok) {
-      const resendText = await customerResponse.text();
-      return jsonResponse(
-        {
-          success: false,
-          error: "Objednavka prisla nam, ale kopia zakaznikovi sa nepodarila odoslat.",
-          detail: resendText
-        },
-        500,
-        corsHeaders
-      );
-    }
-
-    return jsonResponse(
-      {
-        success: true,
-        message: "Objednavka bola uspesne odoslana."
-      },
-      200,
-      corsHeaders
-    );
-  } catch (e) {
-    return jsonResponse(
-      {
-        success: false,
-        error: "Chyba servera pri objednavke."
-      },
-      500,
-      corsHeaders
-    );
-  }
-}
-
-async function sendEmail(env, payload) {
-  return fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + env.RESEND_API_KEY,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
-}
-
-function jsonResponse(data, status, corsHeaders) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-      "Pragma": "no-cache",
-      ...corsHeaders
-    }
-  });
-}
-
-function parsePriceNumber(priceText) {
-  if (!priceText) return 0;
-  const cleaned = String(priceText).replace(",", ".").replace(/[^0-9.]/g, "");
-  const num = parseFloat(cleaned);
-  return isNaN(num) ? 0 : num;
-}
-
-function escapeHtml(text) {
-  return String(text || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
+    sendAppPing();
+    renderCategories();
+    renderCart();
+    renderFavorites();
+    fillCustomerData();
+    initHiddenAdmin();
+  </script>
+</body>
+</html>
