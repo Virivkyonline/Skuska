@@ -16,7 +16,7 @@ export default {
       return handleFeedProxy(url, corsHeaders);
     }
 
-    if (request.method === "GET" && url.pathname === "/product-detail") {
+    if (request.method === "GET" && (url.pathname === "/product-detail" || url.pathname === "/pr")) {
       return handleProductDetail(url, corsHeaders);
     }
 
@@ -24,7 +24,7 @@ export default {
       return handleAppPing(request, env, corsHeaders);
     }
 
-    if (request.method === "GET" && url.pathname === "/admin-stats") {
+    if (request.method === "GET" && (url.pathname === "/admin-stats" || url.pathname === "/ac")) {
       return handleAdminStats(url, env, corsHeaders);
     }
 
@@ -46,6 +46,33 @@ export default {
 
 const ADMIN_PIN = "780801";
 const ENABLE_INSTALL_TRACKING = true;
+
+const HOT_TUB_OBLOZENIE = ["HNEDÁ", "ANTRACIT", "ŠEDÁ"];
+const HOT_TUB_AKRYL = [
+  "Gypsum",
+  "Mayan Cooper",
+  "Midnight opal",
+  "Ocean wave",
+  "Odysey",
+  "Oyster opal",
+  "Sahara",
+  "Silver white marble"
+];
+
+const ZEALUX_VARIANTS = [
+  "11KW (229/11K)",
+  "14KW (229/14K)",
+  "17KW (229/17K)",
+  "21KW (229/21K)",
+  "26KW (229/26K)",
+  "30KW (229/30K)"
+];
+
+const SLNECNIK_VARIANTS = [
+  "Antracit (232/ANT)",
+  "Šedá (232/SED)",
+  "Taupe (232/TAU)"
+];
 
 async function handleFeedProxy(url, corsHeaders) {
   try {
@@ -126,7 +153,7 @@ async function handleProductDetail(url, corsHeaders) {
         return jsonResponse(
           {
             success: true,
-            workerVersion: "safe-parser-v1",
+            workerVersion: "safe-parser-v2",
             product
           },
           200,
@@ -232,53 +259,12 @@ function safeParseProductHtml(html, productUrl) {
     variants = applyVariantFallbacks(productUrl, variants, title, description);
   } catch (e) {}
 
-  const joined = `${String(productUrl || "").toLowerCase()} ${String(title || "").toLowerCase()} ${String(description || "").toLowerCase()}`;
-
-  if (
-    joined.includes("zealux") ||
-    joined.includes("tepelne cerpadlo") ||
-    joined.includes("tepelné čerpadlo")
-  ) {
-    variants.generic = [
-      {
-        name: "Výkon",
-        values: [
-          "11KW (229/11K)",
-          "14KW (229/14K)",
-          "17KW (229/17K)",
-          "21KW (229/21K)",
-          "26KW (229/26K)",
-          "30KW (229/30K)"
-        ]
-      }
-    ];
-  }
-
-  if (
-    joined.includes("slnecnik") ||
-    joined.includes("slnečník") ||
-    joined.includes("konzolovy") ||
-    joined.includes("konzolový") ||
-    joined.includes("270 x 270")
-  ) {
-    variants.generic = [
-      {
-        name: "Farba",
-        values: [
-          "Antracit (232/ANT)",
-          "Šedá (232/SED)",
-          "Taupe (232/TAU)"
-        ]
-      }
-    ];
-  }
-
   return {
     url: productUrl,
     title: title || "Produkt",
     price: price || "",
     image: mainImage || "",
-    gallery: mainImage ? [mainImage] : [],
+    gallery: gallery.length ? gallery : (mainImage ? [mainImage] : []),
     shortDescription: shortDescription || "",
     description: description || metaDescription || "",
     variants: {
@@ -432,7 +418,7 @@ async function handleAdminStats(url, env, corsHeaders) {
     return jsonResponse(
       {
         success: true,
-        workerVersion: "safe-parser-v1",
+        workerVersion: "safe-parser-v2",
         stats: {
           totalInstalls: total,
           activeToday,
@@ -606,20 +592,16 @@ function extractGalleryImages(html, baseUrl) {
     }
   }
 
-  return [...new Set(results)].slice(0, 1);
+  return [...new Set(results)].slice(0, 6);
 }
 
 function findPriceInHtml(html) {
   const text = stripTags(html);
   const eurMatch = text.match(/(?:od\s*)?€\s*[0-9][0-9\s.,]*/i);
-  if (eurMatch) {
-    return eurMatch[0].replace(/\s+/g, " ").trim();
-  }
+  if (eurMatch) return eurMatch[0].replace(/\s+/g, " ").trim();
 
   const eurAfterMatch = text.match(/(?:od\s*)?[0-9][0-9\s.,]*\s*€/i);
-  if (eurAfterMatch) {
-    return eurAfterMatch[0].replace(/\s+/g, " ").trim();
-  }
+  if (eurAfterMatch) return eurAfterMatch[0].replace(/\s+/g, " ").trim();
 
   return "";
 }
@@ -636,9 +618,7 @@ function extractFullDescription(html, fallback) {
   for (const regex of candidates) {
     const found = firstMatch(html, regex);
     const stripped = cleanDescriptionText(stripTags(found));
-    if (stripped && stripped.length > 80) {
-      return stripped;
-    }
+    if (stripped && stripped.length > 80) return stripped;
   }
 
   return cleanDescriptionText(fallback || "");
@@ -725,24 +705,15 @@ function extractTextVariants(plainText) {
   for (const pattern of patterns) {
     const m = text.match(pattern.regex);
     if (!m || !m[1]) continue;
-
     const values = splitVariantValues(m[1]);
-    if (values.length) {
-      groups.push({
-        name: pattern.name,
-        values
-      });
-    }
+    if (values.length) groups.push({ name: pattern.name, values });
   }
 
   return groups;
 }
 
 function splitVariantValues(rawText) {
-  const text = String(rawText || "")
-    .replace(/\s+/g, " ")
-    .trim();
-
+  const text = String(rawText || "").replace(/\s+/g, " ").trim();
   if (!text) return [];
 
   const tokens = text.split(" ").map(x => x.trim()).filter(Boolean);
@@ -894,8 +865,8 @@ function applyVariantFallbacks(productUrl, variants, title = "", description = "
   const joined = `${url} ${ttl} ${desc}`;
 
   const safeVariants = {
-    oblozenie: Array.isArray(variants?.oblozenie) ? variants.oblozenie : [],
-    akryl: Array.isArray(variants?.akryl) ? variants.akryl : [],
+    oblozenie: Array.isArray(variants?.oblozenie) ? [...variants.oblozenie] : [],
+    akryl: Array.isArray(variants?.akryl) ? [...variants.akryl] : [],
     generic: Array.isArray(variants?.generic) ? [...variants.generic] : []
   };
 
@@ -904,6 +875,17 @@ function applyVariantFallbacks(productUrl, variants, title = "", description = "
       const n = String(g?.name || "").toLowerCase().trim();
       return names.some(x => n.includes(x));
     });
+  }
+
+  const isHotTub =
+    joined.includes("virivka") ||
+    joined.includes("vírivka") ||
+    joined.includes("swim spa") ||
+    joined.includes("wellness");
+
+  if (isHotTub) {
+    if (!safeVariants.oblozenie.length) safeVariants.oblozenie = [...HOT_TUB_OBLOZENIE];
+    if (!safeVariants.akryl.length) safeVariants.akryl = [...HOT_TUB_AKRYL];
   }
 
   if (
@@ -916,11 +898,7 @@ function applyVariantFallbacks(productUrl, variants, title = "", description = "
     if (!hasGenericName(["farba"])) {
       safeVariants.generic.push({
         name: "Farba",
-        values: [
-          "Antracit (232/ANT)",
-          "Šedá (232/SED)",
-          "Taupe (232/TAU)"
-        ]
+        values: [...SLNECNIK_VARIANTS]
       });
     }
   }
@@ -933,14 +911,7 @@ function applyVariantFallbacks(productUrl, variants, title = "", description = "
     if (!hasGenericName(["výkon", "vykon"])) {
       safeVariants.generic.push({
         name: "Výkon",
-        values: [
-          "11KW (229/11K)",
-          "14KW (229/14K)",
-          "17KW (229/17K)",
-          "21KW (229/21K)",
-          "26KW (229/26K)",
-          "30KW (229/30K)"
-        ]
+        values: [...ZEALUX_VARIANTS]
       });
     }
   }
@@ -1236,4 +1207,4 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-}
+      }
