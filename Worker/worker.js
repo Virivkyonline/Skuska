@@ -61,13 +61,19 @@ async function handleFeedProxy(url, corsHeaders) {
       status: feedResponse.ok ? 200 : feedResponse.status,
       headers: {
         "Content-Type": "application/xml; charset=utf-8",
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
         ...corsHeaders
       }
     });
   } catch (e) {
     return new Response("Feed proxy error", {
       status: 500,
-      headers: corsHeaders
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        ...corsHeaders
+      }
     });
   }
 }
@@ -96,7 +102,8 @@ async function handleProductDetail(url, corsHeaders) {
         const response = await fetch(tryUrl, {
           method: "GET",
           redirect: "follow",
-          headers: browserHeaders(tryUrl)
+          headers: browserHeaders(tryUrl),
+          cf: { cacheTtl: 0, cacheEverything: false }
         });
 
         const text = await response.text();
@@ -938,6 +945,8 @@ function jsonResponse(data, status, corsHeaders) {
     status,
     headers: {
       "Content-Type": "application/json",
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      "Pragma": "no-cache",
       ...corsHeaders
     }
   });
@@ -957,4 +966,4 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-}
+      }
