@@ -11,7 +11,32 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response("", { headers: corsHeaders });
     }
+        if (request.method === "OPTIONS") {
+      return new Response("", { headers: corsHeaders });
+    }
 
+    if (request.method === "GET" && url.pathname === "/") {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Worker bezi.",
+          endpoints: {
+            admin: "/admin-stats?pin=780801",
+            productDetail: "/product-detail?url=ENCODED_PRODUCT_URL",
+            feed: "/feed?url=ENCODED_FEED_URL",
+            appPing: "POST /app-ping",
+            order: "POST /order"
+          }
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
+    }
     if (request.method === "GET" && url.pathname === "/feed") {
       return handleFeedProxy(url, corsHeaders);
     }
