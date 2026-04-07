@@ -668,14 +668,20 @@
       return String(name || '').replace(/\s+/g, ' ').trim();
     }
 
-    function normalizeVariantKey(name, values) {
-      return (String(name || '').toLowerCase().trim() + '|' + values.map(v => String(v).toLowerCase().trim()).join('|'));
-    }
-
     async function fetchProductDetail(url) {
-      const response = await fetch(API_BASE + '/product-detail?url=' + encodeURIComponent(url), {
-        cache: 'no-store'
-      });
+      const bust = Date.now() + '_' + Math.random().toString(36).slice(2);
+
+      const response = await fetch(
+        API_BASE + '/product-detail?url=' + encodeURIComponent(url) + '&_=' + bust,
+        {
+          method: 'GET',
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        }
+      );
 
       let data = null;
       try {
@@ -854,7 +860,7 @@
           return;
         }
 
-        const key = normalizeVariantKey(name, values);
+        const key = lower + '|' + values.join('|').toLowerCase();
         if (genericSeen.has(key)) return;
         genericSeen.add(key);
 
@@ -1196,10 +1202,12 @@
       status.textContent = 'Odosielam objednávku...';
 
       try {
-        const response = await fetch(API_BASE + '/order', {
+        const response = await fetch(API_BASE + '/order?_=order_' + Date.now(), {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
           },
           body: JSON.stringify({
             meno,
