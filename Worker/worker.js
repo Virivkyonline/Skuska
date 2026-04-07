@@ -20,6 +20,14 @@ export default {
       return handleProductDetail(url, corsHeaders);
     }
 
+    if (request.method === "GET" && url.pathname === "/admin-stats") {
+      return handleAdminStats(url, env, corsHeaders);
+    }
+
+    if (request.method === "POST" && url.pathname === "/app-ping") {
+      return handleAppPing(request, env, corsHeaders);
+    }
+
     if (request.method === "POST" && url.pathname === "/order") {
       return handleOrder(request, env, corsHeaders);
     }
@@ -147,6 +155,150 @@ async function handleProductDetail(url, corsHeaders) {
         success: false,
         error: "Chyba servera pri nacitani detailu produktu."
       },
+      500,
+      corsHeaders
+    );
+  }
+}
+
+async function handleAppPing(request, env, corsHeaders) {
+  try {
+    if (!env.APP_STATS) {
+      return jsonResponse(
+        { success: false, error: "Chyba: KV binding APP_STATS nie je nastavene." },
+        500,
+        corsHeaders
+      );
+    }
+
+    const data = await request.json();
+    const installId = String(data.installId || "").trim();
+
+    if (!installId) {
+      return jsonResponse(
+        { success: false, error: "Chyba: chyba installId." },
+        400,
+        corsHeaders
+      );
+    }
+
+    const now = Date.now();
+    const today = new Date(now).toISOString().slice(0, 10);
+    const key = "install:" + installId;
+
+    const currentRaw = await env.APP_STATS.get(key);
+    let record = null;
+
+    try {
+      record = currentRaw ? JSON.parse(currentRaw) : null;
+    } catch {
+      record = null;
+    }
+
+    const nextRecord = {
+      installId,
+      firstSeen: record?.firstSeen || now,
+      lastSeen: now,
+      firstSeenDate: record?.firstSeenDate || today,
+      lastSeenDate: today,
+      appName: String(data.appName || record?.appName || "").trim(),
+      appVersion: String(data.appVersion || record?.appVersion || "").trim(),
+      platform: String(data.platform || record?.platform || "").trim(),
+      userAgent: String(data.userAgent || record?.userAgent || "").trim()
+    };
+
+    await env.APP_STATS.put(key, JSON.stringify(nextRecord));
+
+    return jsonResponse(
+      { success: true, message: "Ping ulozeny." },
+      200,
+      corsHeaders
+    );
+  } catch (e) {
+    return jsonResponse(
+      { success: false, error: "Chyba servera pri app-ping." },
+      500,
+      corsHeaders
+    );
+  }
+}
+
+async function handleAdminStats(url, env, corsHeaders) {
+  try {
+    const pin = String(url.searchParams.get("pin") || "").trim();
+    const validPin = String(env.ADMIN_PIN || "780801").trim();
+
+    if (!pin || pin !== validPin) {
+      return jsonResponse(
+        { success: false, error: "Neplatny PIN." },
+        401,
+        corsHeaders
+      );
+    }
+
+    if (!env.APP_STATS) {
+      return jsonResponse(
+        { success: false, error: "Chyba: KV binding APP_STATS nie je nastavene." },
+        500,
+        corsHeaders
+      );
+    }
+
+    const list = await env.APP_STATS.list({ prefix: "install:" });
+    const now = Date.now();
+
+    const DAY = 24 * 60 * 60 * 1000;
+
+    let total = 0;
+    let activeToday = 0;
+    let active7d = 0;
+    let active30d = 0;
+    let active180d = 0;
+    let active365d = 0;
+
+    for (const keyInfo of list.keys) {
+      const raw = await env.APP_STATS.get(keyInfo.name);
+      if (!raw) continue;
+
+      let record;
+      try {
+        record = JSON.parse(raw);
+      } catch {
+        continue;
+      }
+
+      total += 1;
+
+      const lastSeen = Number(record?.lastSeen || 0);
+      if (!lastSeen) continue;
+
+      const diff = now - lastSeen;
+
+      if (diff <= DAY) activeToday += 1;
+      if (diff <= 7 * DAY) active7d += 1;
+      if (diff <= 30 * DAY) active30d += 1;
+      if (diff <= 180 * DAY) active180d += 1;
+      if (diff <= 365 * DAY) active365d += 1;
+    }
+
+    return jsonResponse(
+      {
+        success: true,
+        stats: {
+          total,
+          today: activeToday,
+          days7: active7d,
+          days30: active30d,
+          days180: active180d,
+          days365: active365d
+        }
+      },
+      200,
+      corsHeaders
+    );
+  } catch (e) {
+    return jsonResponse(
+      { success: false, error: "Chyba servera pri admin statistikach." },
       500,
       corsHeaders
     );
@@ -323,21 +475,6 @@ function extractGalleryImages(html, baseUrl) {
   }
 
   return unique;
-}
-
-function pickBestImage(html, baseUrl, title) {
-  const gallery = extractGalleryImages(html, baseUrl);
-  if (gallery.length) {
-    return gallery[0];
-  }
-
-  const ogImage = firstMatch(html, /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"]+)["']/i);
-  if (ogImage) {
-    const full = absolutizeUrl(ogImage, baseUrl);
-    if (full) return full;
-  }
-
-  return "";
 }
 
 function findPriceInHtml(html) {
