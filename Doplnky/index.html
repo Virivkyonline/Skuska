@@ -692,6 +692,15 @@
       'https://www.virivkyonline.sk/projektor-byintek-p20-dlp-3d-4k-android-os/'
     ];
 
+    const ZEALUX_PRICE_MAP = {
+      '11KW (229/11K)': 2465,
+      '14KW (229/14K)': 2852,
+      '17KW (229/17K)': 3749,
+      '21KW (229/21K)': 4256,
+      '26KW (229/26K)': 5199,
+      '30KW (229/30K)': 5618
+    };
+
     let products = [];
     let detailProduct = null;
     let toastTimeout = null;
@@ -732,14 +741,34 @@
         .replace(/'/g, '&#039;');
     }
 
+    function formatEur(value) {
+      const num = Number(value || 0);
+      if (!num) return 'Cena na vyžiadanie';
+      return `${num.toLocaleString('sk-SK')} €`;
+    }
+
     function priceToDisplay(priceText) {
       if (!priceText) return 'Cena na vyžiadanie';
-      return String(priceText).replace(/\s+/g, ' ').trim();
+
+      const str = String(priceText).trim();
+
+      if (str.includes('€')) {
+        return str.replace(/\s+/g, ' ').trim();
+      }
+
+      const parsed = parsePriceNumber(str);
+      if (parsed > 0) return formatEur(parsed);
+
+      return str;
     }
 
     function parsePriceNumber(priceText) {
       if (!priceText) return 0;
-      const cleaned = String(priceText).replace(',', '.').replace(/[^0-9.]/g, '');
+      const cleaned = String(priceText)
+        .replace(/\u00A0/g, '')
+        .replace(/\s+/g, '')
+        .replace(',', '.')
+        .replace(/[^0-9.]/g, '');
       const num = parseFloat(cleaned);
       return isNaN(num) ? 0 : num;
     }
@@ -750,6 +779,55 @@
 
     function sanitizeVariantName(name) {
       return String(name || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function normalizeProductKey(product) {
+      return String(product?.url || product?.title || '').toLowerCase();
+    }
+
+    function isZealuxProduct(product) {
+      const key = normalizeProductKey(product);
+      return key.includes('zealux') || key.includes('tepelne-cerpadlo-zealux');
+    }
+
+    function getSelectedGenericVariants() {
+      const selects = document.querySelectorAll('.generic-variant');
+      const items = [];
+
+      selects.forEach(select => {
+        const name = select.getAttribute('data-variant-name') || '';
+        const value = select.value || '';
+        if (name && value) {
+          items.push({ name, value });
+        }
+      });
+
+      return items;
+    }
+
+    function collectGenericVariantText() {
+      return getSelectedGenericVariants()
+        .map(item => `${item.name}: ${item.value}`)
+        .join(' | ');
+    }
+
+    function resolveCurrentDetailPrice() {
+      if (!detailProduct) return detailProduct?.price || '';
+
+      if (isZealuxProduct(detailProduct)) {
+        const selected = getSelectedGenericVariants();
+        const vykon = selected.find(x => String(x.name).toLowerCase().includes('výkon') || String(x.name).toLowerCase().includes('vykon'));
+        if (vykon && ZEALUX_PRICE_MAP[vykon.value]) {
+          return formatEur(ZEALUX_PRICE_MAP[vykon.value]);
+        }
+      }
+
+      return priceToDisplay(detailProduct.price);
+    }
+
+    function updateDetailPriceBySelection() {
+      if (!detailProduct) return;
+      document.getElementById('detail-price').textContent = resolveCurrentDetailPrice();
     }
 
     function getInstallId() {
@@ -868,11 +946,17 @@
           ? `<div class="product-image-wrap"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"></div>`
           : `<div class="product-image-wrap"><span style="color:#cfd6e2;font-size:14px;">Bez obrázka</span></div>`;
 
+        let displayPrice = priceToDisplay(product.price);
+
+        if (isZealuxProduct(product)) {
+          displayPrice = 'od 2 465 €';
+        }
+
         card.innerHTML = `
           ${imageHtml}
           <div class="product-body">
             <div class="product-title">${escapeHtml(product.title)}</div>
-            <div class="product-price">${escapeHtml(priceToDisplay(product.price))}</div>
+            <div class="product-price">${escapeHtml(displayPrice)}</div>
             <div class="product-desc">${escapeHtml(getShortDescription(product))}</div>
             <div class="action-row">
               <button class="btn" type="button">Otvoriť detail</button>
@@ -911,7 +995,6 @@
 
     function renderDetail(product) {
       document.getElementById('detail-title').textContent = product.title || '';
-      document.getElementById('detail-price').textContent = priceToDisplay(product.price);
       document.getElementById('detail-description').textContent = product.description || product.shortDescription || '';
 
       const mainImage = document.getElementById('detail-main-image');
@@ -984,22 +1067,12 @@
         genericWrap.appendChild(block);
       });
 
-      document.getElementById('detail-qty').value = 1;
-    }
-
-    function collectGenericVariantText() {
-      const selects = document.querySelectorAll('.generic-variant');
-      const items = [];
-
-      selects.forEach(select => {
-        const name = select.getAttribute('data-variant-name') || '';
-        const value = select.value || '';
-        if (name && value) {
-          items.push(name + ': ' + value);
-        }
+      document.querySelectorAll('.generic-variant').forEach(select => {
+        select.addEventListener('change', updateDetailPriceBySelection);
       });
 
-      return items.join(' | ');
+      document.getElementById('detail-qty').value = 1;
+      updateDetailPriceBySelection();
     }
 
     function getCart() {
@@ -1022,10 +1095,10 @@
       const akrylEl = document.getElementById('variant-akryl');
 
       const item = {
-        id: detailProduct.url,
+        id: detailProduct.url + '|' + collectGenericVariantText() + '|' + (oblozenieEl?.value || '') + '|' + (akrylEl?.value || ''),
         url: detailProduct.url,
         title: detailProduct.title,
-        price: detailProduct.price,
+        price: resolveCurrentDetailPrice(),
         image: detailProduct.image || '',
         qty,
         oblozenie: oblozenieEl && oblozenieEl.parentElement.style.display !== 'none' ? oblozenieEl.value : '',
@@ -1105,7 +1178,7 @@
         list.appendChild(div);
       });
 
-      totalEl.textContent = 'Spolu: ' + total.toFixed(2) + ' €';
+      totalEl.textContent = 'Spolu: ' + formatEur(total);
     }
 
     function getFavorites() {
@@ -1127,10 +1200,10 @@
       const akrylEl = document.getElementById('variant-akryl');
 
       const item = {
-        id: detailProduct.url,
+        id: detailProduct.url + '|' + collectGenericVariantText() + '|' + (oblozenieEl?.value || '') + '|' + (akrylEl?.value || ''),
         url: detailProduct.url,
         title: detailProduct.title,
-        price: detailProduct.price,
+        price: resolveCurrentDetailPrice(),
         image: detailProduct.image || '',
         oblozenie: oblozenieEl && oblozenieEl.parentElement.style.display !== 'none' ? oblozenieEl.value : '',
         akryl: akrylEl && akrylEl.parentElement.style.display !== 'none' ? akrylEl.value : '',
@@ -1138,12 +1211,7 @@
       };
 
       const favorites = getFavorites();
-      const exists = favorites.some(f =>
-        f.id === item.id &&
-        (f.oblozenie || '') === (item.oblozenie || '') &&
-        (f.akryl || '') === (item.akryl || '') &&
-        (f.variantText || '') === (item.variantText || '')
-      );
+      const exists = favorites.some(f => f.id === item.id);
 
       if (exists) {
         showToast('Produkt už je v obľúbených');
