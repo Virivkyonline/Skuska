@@ -52,7 +52,8 @@ async function handleFeedProxy(url, corsHeaders) {
     const feedResponse = await fetch(normalizedUrl, {
       method: "GET",
       redirect: "follow",
-      headers: browserHeaders(normalizedUrl)
+      headers: browserHeaders(normalizedUrl),
+      cf: { cacheTtl: 0, cacheEverything: false }
     });
 
     const text = await feedResponse.text();
@@ -241,7 +242,7 @@ function parseProductHtml(html, productUrl) {
   const shortDescription = buildShortDescription(description, metaDescription);
 
   let variants = extractVariants(cleanedHtml);
-  variants = applyVariantFallbacks(productUrl, variants);
+  variants = applyVariantFallbacks(productUrl, variants, title, description);
 
   return {
     url: productUrl,
@@ -255,21 +256,33 @@ function parseProductHtml(html, productUrl) {
   };
 }
 
-function applyVariantFallbacks(productUrl, variants) {
+function applyVariantFallbacks(productUrl, variants, title = "", description = "") {
   const url = String(productUrl || "").toLowerCase();
+  const ttl = String(title || "").toLowerCase();
+  const desc = String(description || "").toLowerCase();
+  const joined = `${url} ${ttl} ${desc}`;
 
   const safeVariants = {
     oblozenie: Array.isArray(variants?.oblozenie) ? variants.oblozenie : [],
     akryl: Array.isArray(variants?.akryl) ? variants.akryl : [],
-    generic: Array.isArray(variants?.generic) ? variants.generic : []
+    generic: Array.isArray(variants?.generic) ? [...variants.generic] : []
   };
 
-  const existingKeys = new Set(
-    safeVariants.generic.map(g => String(g?.name || "").toLowerCase().trim())
-  );
+  function hasGenericName(names) {
+    return safeVariants.generic.some(g => {
+      const n = String(g?.name || "").toLowerCase().trim();
+      return names.some(x => n.includes(x));
+    });
+  }
 
-  if (url.includes("/konzolovy-slnecnik-270-x-270--vratane-zakladne-na-zemi--antracit/")) {
-    if (!existingKeys.has("farba")) {
+  if (
+    joined.includes("slnecnik") ||
+    joined.includes("slnečník") ||
+    joined.includes("270 x 270") ||
+    joined.includes("konzolovy") ||
+    joined.includes("konzolový")
+  ) {
+    if (!hasGenericName(["farba"])) {
       safeVariants.generic.push({
         name: "Farba",
         values: [
@@ -281,8 +294,12 @@ function applyVariantFallbacks(productUrl, variants) {
     }
   }
 
-  if (url.includes("/tepelne-cerpadlo-zealux/")) {
-    if (!existingKeys.has("výkon") && !existingKeys.has("vykon")) {
+  if (
+    joined.includes("zealux") ||
+    joined.includes("tepelne cerpadlo") ||
+    joined.includes("tepelné čerpadlo")
+  ) {
+    if (!hasGenericName(["výkon", "vykon"])) {
       safeVariants.generic.push({
         name: "Výkon",
         values: [
@@ -966,4 +983,4 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-      }
+    }
