@@ -1,5 +1,11 @@
 {
   "name": "virivkyapp",
   "main": "Worker/worker.js",
-  "compatibility_date": "2026-04-06"
+  "compatibility_date": "2026-04-08",
+  "kv_namespaces": [
+    {
+      "binding": "APP_STATS",
+      "id": "c730b4c52d694e88a5a91d6530c877b0"
+    }
+  ]
 }
