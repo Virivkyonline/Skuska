@@ -1,1 +1,1826 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Platinum Lech Spa</title>
+<style>
+  :root {
+    --bg-color: #081526;
+    --bg-overlay: rgba(6, 20, 36, 0.48);
+    --title-bar-bg: #4affed;
+    --title-bar-bg-2: #15345f;
+    --content-bg-1: #16365f;
+    --content-bg-2: #274d7d;
+    --content-glow: rgba(255,255,255,0.05);
 
+    --title-text: #ffffff;
+    --center-text: #eef4fb;
+    --muted-text: #d6e0ec;
+    --accent-text: #d4af37;
+
+    --button-bg-1: #f3d46b;
+    --button-bg-2: #d7ae33;
+    --button-bg-3: #b98914;
+    --button-text: #0f1b2a;
+
+    --button-active-1: #fff2bf;
+    --button-active-2: #e4be50;
+    --button-active-3: #c99319;
+
+    --secondary-btn-1: #3a669f;
+    --secondary-btn-2: #23466d;
+
+    --danger-btn-1: #f05b5b;
+    --danger-btn-2: #b91c1c;
+
+    --card-bg: rgba(8, 23, 42, 0.42);
+    --card-bg-strong: rgba(8, 23, 42, 0.58);
+    --card-border: rgba(255,255,255,0.12);
+
+    --input-bg: rgba(255,255,255,0.95);
+    --input-text: #111827;
+
+    --success-green: #1f9d55;
+    --shadow-soft: 0 10px 24px rgba(0,0,0,0.18);
+    --shadow-medium: 0 18px 36px rgba(0,0,0,0.28);
+    --shadow-strong: 0 24px 60px rgba(0,0,0,0.35);
+
+    --radius-sm: 16px;
+    --radius-md: 22px;
+    --radius-lg: 30px;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    width: 100%;
+    min-height: 100%;
+    font-family: Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--title-text);
+  }
+
+  body {
+    background:
+      linear-gradient(180deg, var(--bg-overlay) 0%, rgba(7,18,34,0.62) 100%),
+      url('bublinky.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+
+  .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .title-panel {
+    width: 100%;
+    text-align: center;
+    padding: 30px 16px 18px 16px;
+    background:
+      linear-gradient(180deg, var(--title-bar-bg) 0%, var(--title-bar-bg-2) 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  .title-panel h1 {
+    font-size: 30px;
+    line-height: 1.08;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: var(--title-text);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.18);
+    margin-bottom: 8px;
+  }
+
+  .title-panel p {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    color: var(--accent-text);
+    text-transform: uppercase;
+  }
+
+  .top-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 16px 16px 0 16px;
+    max-width: 1180px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .top-tabs button {
+    width: 100%;
+    padding: 14px 10px;
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 18px;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    background: linear-gradient(
+      180deg,
+      var(--button-bg-1) 0%,
+      var(--button-bg-2) 58%,
+      var(--button-bg-3) 100%
+    );
+    color: var(--button-text);
+    box-shadow:
+      0 10px 24px rgba(0,0,0,0.20),
+      inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+
+  .top-tabs button:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 16px 28px rgba(0,0,0,0.24),
+      inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+
+  .top-tabs button.active {
+    background: linear-gradient(
+      180deg,
+      var(--button-active-1) 0%,
+      var(--button-active-2) 58%,
+      var(--button-active-3) 100%
+    );
+  }
+
+  .content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 24px 16px 30px 16px;
+  }
+
+  .center-panel {
+    width: 100%;
+    max-width: 1180px;
+    background:
+      radial-gradient(circle at top left, var(--content-glow) 0%, transparent 28%),
+      linear-gradient(180deg, var(--content-bg-1) 0%, var(--content-bg-2) 100%);
+    border-radius: 32px;
+    padding: 28px 20px;
+    box-shadow: var(--shadow-strong);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .center-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 22%, transparent 78%, rgba(255,255,255,0.03) 100%);
+  }
+
+  .center-panel > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .center-panel h2 {
+    font-size: 28px;
+    margin-bottom: 14px;
+    color: var(--title-text);
+    text-align: center;
+    font-weight: 900;
+    letter-spacing: 0.2px;
+  }
+
+  .center-panel p {
+    font-size: 16px;
+    line-height: 1.68;
+    color: var(--center-text);
+    margin-bottom: 14px;
+  }
+
+  .page-section {
+    display: none;
+  }
+
+  .page-section.active {
+    display: block;
+  }
+
+  #status-home,
+  #status-products,
+  #status-category,
+  #status-detail,
+  #order-status,
+  #admin-status {
+    margin-top: 10px;
+    font-size: 15px;
+    color: #ffffff;
+    text-align: left;
+  }
+
+  .category-grid,
+  .products-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: 18px;
+  }
+
+  .category-card,
+  .product-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 26px;
+    overflow: hidden;
+    box-shadow: 0 16px 34px rgba(0,0,0,0.20);
+    backdrop-filter: blur(10px);
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  }
+
+  .category-card:hover,
+  .product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 22px 42px rgba(0,0,0,0.24);
+    border-color: rgba(255,255,255,0.18);
+  }
+
+  .category-card {
+    padding: 22px;
+  }
+
+  .category-card h3 {
+    font-size: 22px;
+    line-height: 1.3;
+    margin-bottom: 8px;
+    color: #ffffff;
+    font-weight: 800;
+  }
+
+  .category-card p {
+    color: var(--muted-text);
+    margin-bottom: 16px;
+    font-size: 15px;
+  }
+
+  .product-image-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .product-image-wrap img,
+  .detail-main-image img,
+  .cart-thumb img,
+  .favorite-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .product-body {
+    padding: 18px;
+    text-align: left;
+  }
+
+  .product-title {
+    font-size: 19px;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 10px;
+    line-height: 1.35;
+  }
+
+  .product-price {
+    font-size: 24px;
+    font-weight: 900;
+    color: #ffffff;
+    margin-bottom: 10px;
+  }
+
+  .product-desc,
+  .detail-description {
+    font-size: 14px;
+    color: var(--muted-text);
+    line-height: 1.6;
+    white-space: pre-line;
+  }
+
+  .product-desc {
+    margin-bottom: 14px;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .action-row,
+  .cart-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .btn,
+  .variant-select,
+  .qty-input,
+  input,
+  textarea {
+    width: 100%;
+    padding: 15px 16px;
+    border-radius: 18px;
+    font-size: 16px;
+  }
+
+  .btn {
+    cursor: pointer;
+    font-weight: 800;
+    border: none;
+    transition: all 0.22s ease;
+    background: linear-gradient(
+      180deg,
+      var(--button-bg-1) 0%,
+      var(--button-bg-2) 58%,
+      var(--button-bg-3) 100%
+    );
+    color: var(--button-text);
+    box-shadow:
+      0 10px 24px rgba(0,0,0,0.18),
+      inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 16px 28px rgba(0,0,0,0.24),
+      inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+
+  .btn.secondary {
+    background: linear-gradient(180deg, var(--secondary-btn-1) 0%, var(--secondary-btn-2) 100%);
+    color: #ffffff;
+  }
+
+  .btn.danger {
+    background: linear-gradient(180deg, var(--danger-btn-1) 0%, var(--danger-btn-2) 100%);
+    color: #ffffff;
+  }
+
+  .variant-select,
+  .qty-input,
+  input,
+  textarea {
+    background: var(--input-bg);
+    color: var(--input-text);
+    border: 1px solid rgba(255,255,255,0.10);
+    outline: none;
+    font-weight: 700;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+  }
+
+  input:focus,
+  textarea:focus,
+  .variant-select:focus,
+  .qty-input:focus {
+    border-color: rgba(212,175,55,0.65);
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.12);
+  }
+
+  textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  .empty-state {
+    background: var(--card-bg-strong);
+    border: 1px solid var(--card-border);
+    border-radius: 22px;
+    padding: 22px;
+    color: var(--muted-text);
+    font-size: 15px;
+    text-align: left;
+    margin-top: 18px;
+    backdrop-filter: blur(10px);
+  }
+
+  .detail-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-top: 18px;
+  }
+
+  .detail-main-image {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 24px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--shadow-medium);
+  }
+
+  .detail-title {
+    font-size: 30px;
+    font-weight: 900;
+    margin-bottom: 10px;
+    color: #ffffff;
+    line-height: 1.2;
+  }
+
+  .detail-price {
+    font-size: 30px;
+    font-weight: 900;
+    margin-bottom: 14px;
+    color: #ffffff;
+  }
+
+  .variant-block {
+    margin-top: 14px;
+  }
+
+  .variant-label {
+    font-size: 15px;
+    color: var(--muted-text);
+    margin-bottom: 8px;
+    font-weight: 800;
+  }
+
+  .favorites-list,
+  .cart-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 18px;
+  }
+
+  .favorite-item,
+  .cart-item {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 84px 1fr;
+    gap: 14px;
+    align-items: start;
+    backdrop-filter: blur(10px);
+  }
+
+  .favorite-thumb,
+  .cart-thumb {
+    width: 84px;
+    height: 84px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.05);
+  }
+
+  .favorite-title,
+  .cart-title {
+    font-size: 17px;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .favorite-meta,
+  .cart-meta {
+    font-size: 14px;
+    color: var(--muted-text);
+    line-height: 1.55;
+  }
+
+  .cart-total {
+    margin-top: 18px;
+    font-size: 26px;
+    font-weight: 900;
+    color: #ffffff;
+    text-align: left;
+  }
+
+  .inline-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .inline-row .btn,
+  .inline-row .qty-input {
+    width: auto;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .admin-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: 18px;
+  }
+
+  .admin-stat {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 14px 28px rgba(0,0,0,0.16);
+  }
+
+  .admin-stat-title {
+    font-size: 14px;
+    color: var(--muted-text);
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+
+  .admin-stat-value {
+    font-size: 30px;
+    font-weight: 900;
+    color: #ffffff;
+  }
+
+  .logo-bottom {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    min-height: 120px;
+    padding: 20px 16px 10px 16px;
+  }
+
+  .logo-bottom img {
+    max-width: 260px;
+    width: 60%;
+    height: auto;
+    display: block;
+    cursor: pointer;
+    filter: drop-shadow(0 14px 22px rgba(0,0,0,0.30));
+    transition: transform 0.22s ease, filter 0.22s ease;
+  }
+
+  .logo-bottom img:hover {
+    transform: scale(1.02);
+    filter: drop-shadow(0 18px 26px rgba(0,0,0,0.36));
+  }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--success-green);
+    color: #ffffff;
+    padding: 12px 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 800;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 9999;
+    white-space: nowrap;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .home-buttons {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  @media (max-width: 560px) {
+    .top-tabs {
+      gap: 10px;
+      padding: 14px 12px 0 12px;
+    }
+
+    .top-tabs button {
+      font-size: 13px;
+      padding: 13px 6px;
+      border-radius: 16px;
+    }
+
+    .center-panel {
+      border-radius: 24px;
+      padding: 22px 16px;
+    }
+
+    .detail-title,
+    .detail-price {
+      font-size: 24px;
+    }
+  }
+
+  @media (min-width: 700px) {
+    .title-panel h1 {
+      font-size: 48px;
+    }
+
+    .title-panel p {
+      font-size: 20px;
+    }
+
+    .center-panel {
+      padding: 36px 30px;
+    }
+
+    .center-panel h2 {
+      font-size: 36px;
+    }
+
+    .category-grid,
+    .products-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .detail-layout {
+      grid-template-columns: 390px 1fr;
+    }
+
+    .admin-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .logo-bottom img {
+      max-width: 320px;
+    }
+  }
+
+  @media (min-width: 980px) {
+    .category-grid,
+    .products-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="title-panel">
+      <h1>PLATINUM LECH SPA</h1>
+      <p>KVALITNÉ VÍRIVKY NA PREDAJ</p>
+    </div>
+
+    <div class="top-tabs">
+      <button id="tab-home" class="active" type="button" onclick="showSection('home')">Domov</button>
+      <button id="tab-products" type="button" onclick="showSection('products')">Produkty</button>
+      <button id="tab-favorites" type="button" onclick="showSection('favorites'); renderFavorites();">Obľúbené</button>
+      <button id="tab-cart" type="button" onclick="showSection('cart'); renderCart();">Košík</button>
+    </div>
+
+    <div class="content">
+      <div class="center-panel">
+
+        <section id="section-home" class="page-section active">
+          <h2>Prečo si vybrať nás</h2>
+          <p>
+            Objavte svet domáceho relaxu, kde sa pohodlie spája s moderným dizajnom,
+            spoľahlivosťou a dlhoročnými skúsenosťami.
+          </p>
+          <p>
+            Naše vírivky predávame pod vlastnou značkou <strong style="color:#D4AF37;">Platinum Lech Spa</strong>
+            s dôrazom na kvalitu, dlhú životnosť, spokojnosť zákazníkov a profesionálny servis.
+          </p>
+          <p>
+            Volám sa <strong style="color:#D4AF37;">Stanislav Lech</strong> a vírivkám sa venujem viac ako 15 rokov.
+            V podnikaní pôsobím viac ako 27 rokov, preto viem, že pri kúpe vírivky je dôležitý nielen produkt,
+            ale aj firma, na ktorú sa môžete spoľahnúť aj v budúcnosti.
+          </p>
+
+          <div class="home-buttons">
+            <button class="btn" type="button" onclick="showSection('products')">Prejsť na produkty</button>
+            <button class="btn secondary" type="button" onclick="showSection('cart'); renderCart();">Prejsť do košíka</button>
+          </div>
+        </section>
+
+        <section id="section-products" class="page-section">
+          <h2>Produkty</h2>
+          <p id="status-products">Vyber si kategóriu.</p>
+          <div id="category-grid" class="category-grid"></div>
+        </section>
+
+        <section id="section-category" class="page-section">
+          <h2 id="category-title">Kategória</h2>
+          <p id="status-category">Načítavam produkty...</p>
+          <div class="action-row" style="margin-bottom:14px;">
+            <button class="btn secondary" type="button" onclick="showSection('products')">Späť na kategórie</button>
+          </div>
+          <div id="products-grid" class="products-grid"></div>
+          <div id="products-empty" class="empty-state" style="display:none;">Žiadne produkty sa nepodarilo načítať.</div>
+        </section>
+
+        <section id="section-detail" class="page-section">
+          <h2>Detail produktu</h2>
+          <p id="status-detail">Vyber produkt.</p>
+
+          <div id="detail-empty" class="empty-state" style="display:none;">Detail produktu sa nepodarilo načítať.</div>
+
+          <div id="detail-wrap" style="display:none;">
+            <div class="detail-layout">
+              <div>
+                <div class="detail-main-image" id="detail-main-image"></div>
+              </div>
+
+              <div>
+                <div class="detail-title" id="detail-title"></div>
+                <div class="detail-price" id="detail-price"></div>
+                <div class="detail-description" id="detail-description"></div>
+
+                <div id="variant-oblozenie-wrap" class="variant-block" style="display:none;">
+                  <div class="variant-label">Farba obloženia</div>
+                  <select id="variant-oblozenie" class="variant-select"></select>
+                </div>
+
+                <div id="variant-akryl-wrap" class="variant-block" style="display:none;">
+                  <div class="variant-label">Farba akrylu</div>
+                  <select id="variant-akryl" class="variant-select"></select>
+                </div>
+
+                <div id="generic-variants-wrap"></div>
+
+                <div class="variant-block">
+                  <div class="variant-label">Počet kusov</div>
+                  <input id="detail-qty" class="qty-input" type="number" min="1" value="1">
+                </div>
+
+                <div class="action-row">
+                  <button class="btn" type="button" onclick="addDetailToCart()">Pridať do košíka</button>
+                  <button class="btn secondary" type="button" onclick="saveDetailToFavorites()">Uložiť do obľúbených</button>
+                  <button class="btn secondary" type="button" onclick="backToCurrentCategory()">Späť na produkty</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="section-favorites" class="page-section">
+          <h2>Obľúbené produkty</h2>
+          <p>Tu sa ukladajú tvoje obľúbené produkty.</p>
+          <div id="favorites-list" class="favorites-list"></div>
+          <div class="action-row">
+            <button class="btn danger" type="button" onclick="clearFavorites()">Vymazať obľúbené</button>
+            <button class="btn secondary" type="button" onclick="showSection('products')">Späť na produkty</button>
+          </div>
+        </section>
+
+        <section id="section-cart" class="page-section">
+          <h2>Nákupný košík</h2>
+          <div id="cart-list" class="cart-list"></div>
+          <div id="cart-total" class="cart-total">Spolu: 0 €</div>
+
+          <h2 style="margin-top:28px;">Objednávka</h2>
+          <form id="orderForm">
+            <input type="text" id="order_name" placeholder="Meno a priezvisko" required>
+            <input type="email" id="order_email" placeholder="Email" required>
+            <input type="tel" id="order_phone" placeholder="Telefónne číslo" required>
+            <input type="text" id="order_street" placeholder="Ulica" required>
+            <input type="text" id="order_house_number" placeholder="Súpisné / orientačné číslo" required>
+            <input type="text" id="order_zip" placeholder="PSČ" required>
+            <input type="text" id="order_city" placeholder="Mesto" required>
+            <textarea id="order_note" placeholder="Poznámka k objednávke"></textarea>
+
+            <div class="cart-buttons">
+              <button class="btn" type="submit">Odoslať objednávku</button>
+              <button class="btn danger" type="button" onclick="clearCart()">Vymazať košík</button>
+              <button class="btn secondary" type="button" onclick="clearCustomerData()">Vymazať údaje zákazníka</button>
+              <button class="btn secondary" type="button" onclick="showSection('products')">Späť na produkty</button>
+            </div>
+          </form>
+
+          <p id="order-status"></p>
+        </section>
+
+        <section id="section-admin" class="page-section">
+          <h2>Admin štatistiky</h2>
+          <p id="admin-status">Skrytý admin panel.</p>
+
+          <div class="admin-grid">
+            <div class="admin-stat">
+              <div class="admin-stat-title">Celkom zariadení</div>
+              <div class="admin-stat-value" id="admin-total">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne dnes</div>
+              <div class="admin-stat-value" id="admin-today">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne 7 dní</div>
+              <div class="admin-stat-value" id="admin-7d">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne 30 dní</div>
+              <div class="admin-stat-value" id="admin-30d">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne 180 dní</div>
+              <div class="admin-stat-value" id="admin-180d">0</div>
+            </div>
+
+            <div class="admin-stat">
+              <div class="admin-stat-title">Aktívne 365 dní</div>
+              <div class="admin-stat-value" id="admin-365d">0</div>
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button class="btn secondary" type="button" onclick="showSection('home')">Späť</button>
+          </div>
+        </section>
+
+        <div class="logo-bottom">
+          <img id="adminLogo" src="logo-gold.png" alt="Logo Platinum Lech Spa">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Pridané do košíka</div>
+
+  <script>
+    const API_BASE = 'https://virivkyapp.lechstav.workers.dev';
+    const ADMIN_PIN = '780801';
+
+    const CATEGORIES = [
+      {
+        id: 'hot-tubs-4-5',
+        title: 'Vírivky pre 4–5 osôb',
+        description: 'Modely vhodné pre rodinu a pohodlný relax doma aj na záhrade.',
+        urls: [
+          'https://www.virivkyonline.sk/virivka-aurora---luxusna-5-miestna-virivka-s-hydromasazou-pre-dom-a-zahradu/',
+          'https://www.virivkyonline.sk/virivka-life-220x220x90cm-prijemny-komfort-a-styl-pre-5-osob/',
+          'https://www.virivkyonline.sk/virivka-model-split-200x200x90cm-5-miestna-skladom-akcia-/',
+          'https://www.virivkyonline.sk/virivka-model-springs-210x210x92cm-kupelny-zazitok-a-stylovy-dizajn-pre-kazdy-domov/',
+          'https://www.virivkyonline.sk/virivka-new-maximus---luxusny-relax-moderny-dizajn/',
+          'https://www.virivkyonline.sk/virivka-new-maximus--life/',
+          'https://www.virivkyonline.sk/virivka-new-maximus-deluxe--luxusny-relax-moderny-dizajn/'
+        ]
+      },
+      {
+        id: 'hot-tubs-2-3',
+        title: 'Malé vírivky pre 2–3 osoby',
+        description: 'Kompaktné modely vhodné na menší priestor a útulný wellness doma.',
+        urls: [
+          'https://www.virivkyonline.sk/virivka-home-210x160x77cm-kompaktny-rozmer-pre-domaci-wellness/',
+          'https://www.virivkyonline.sk/virivka-sun-200x160x90-idealna-volba-pre-pohodlie-a-relaxaciu-v-mensom-priestore/',
+          'https://www.virivkyonline.sk/virivka-puma-210x170x90-exkluzivny-model-pre-utulne-relaxacne-chvile/'
+        ]
+      },
+      {
+        id: 'hot-tubs-6-plus',
+        title: 'Vírivky pre 6 a viac osôb',
+        description: 'Väčšie modely pre viac osôb a ešte viac priestoru na relax.',
+        urls: [
+          'https://www.virivkyonline.sk/virivka-model-panama-200x200x89cm-pohodlny-priestor-pre-6-osob/',
+          'https://www.virivkyonline.sk/virivka-model-gama-220x220x95cm-pohodlny-priestor-pre-6-osob/',
+          'https://www.virivkyonline.sk/swim-spa-081--vstavany-bazen-do-zeme-perfektne-plavecke-zazitky-a-spa-komfort/'
+        ]
+      },
+      {
+        id: 'accessories',
+        title: 'Doplnky a voliteľná výbava',
+        description: 'Doplnky, technológie, schodíky, tepelné čerpadlá, UV lampy a ďalšia výbava.',
+        urls: [
+          'https://www.virivkyonline.sk/nahradna-ziarovka-pre-uv-lampu/',
+          'https://www.virivkyonline.sk/termokryt-pre-virivku-zadanie-do-vyroby/',
+          'https://www.virivkyonline.sk/zdvihak-na-termokryt-luxus/',
+          'https://www.virivkyonline.sk/hydraulicky-zdvihak-lux/',
+          'https://www.virivkyonline.sk/byintek-u80-max/',
+          'https://www.virivkyonline.sk/bazenovy-vysavac-spa-vac-paradise/',
+          'https://www.virivkyonline.sk/konzolovy-slnecnik-270-x-270--vratane-zakladne-na-zemi--antracit/',
+          'https://www.virivkyonline.sk/tepelne-cerpadlo-zealux/',
+          'https://www.virivkyonline.sk/davkovacia-stanica-va-dos-basic-oxy-ph/',
+          'https://www.virivkyonline.sk/schodiky-standard/',
+          'https://www.virivkyonline.sk/barovy-stol-so-stolickami-2ks/',
+          'https://www.virivkyonline.sk/uv-lampa/',
+          'https://www.virivkyonline.sk/revolucny-automaticky-cistic-filtrov-estelle-revolucny/',
+          'https://www.virivkyonline.sk/predpriprava-na-tepelne-cerpadlo/',
+          'https://www.virivkyonline.sk/pop-up-led-repro/',
+          'https://www.virivkyonline.sk/wifi-modul/',
+          'https://www.virivkyonline.sk/barovy-stol-pre-virivku/',
+          'https://www.virivkyonline.sk/projektor-byintek-p20-dlp-3d-4k-android-os/'
+        ]
+      },
+      {
+        id: 'chemistry-filters',
+        title: 'Chémia a filtre',
+        description: 'Bezchlórová chémia, testery, filtre, čističe a príslušenstvo k údržbe víriviek.',
+        urls: [
+          'https://www.virivkyonline.sk/udrzba-virivky-bezchlorova-chemia-platinum-lech-spa/',
+          'https://www.virivkyonline.sk/h2o-clear/',
+          'https://www.virivkyonline.sk/filter-pre-virivku-maxi--puma-sun-antibakterialny/',
+          'https://www.virivkyonline.sk/vone-spa-line-fragrance/',
+          'https://www.virivkyonline.sk/filter-pre-virivku-split/',
+          'https://www.virivkyonline.sk/cistic-filtrov-viriviek/',
+          'https://www.virivkyonline.sk/h2o-spa-cleaner/',
+          'https://www.virivkyonline.sk/h2o-hardness-remover-1-l/',
+          'https://www.virivkyonline.sk/oxy-pure-ag-5l/',
+          'https://www.virivkyonline.sk/odpenovac-hth-1l/',
+          'https://www.virivkyonline.sk/absorpcna-spongia-do-viriviek-nasaje-necistoty-z-vody-vo-virivke/',
+          'https://www.virivkyonline.sk/compactal-gel/',
+          'https://www.virivkyonline.sk/https-www-virivkyonline-sk-p-614-digitalny-ph-tester/',
+          'https://www.virivkyonline.sk/vanicka-pre-cistenie-filtrov/',
+          'https://www.virivkyonline.sk/ph-minus/',
+          'https://www.virivkyonline.sk/cistic-termokrytu-clean-sport-spa/',
+          'https://www.virivkyonline.sk/kvapkovy-tester-pre-bezchlorovu-chemiu-duke-d/',
+          'https://www.virivkyonline.sk/plavacik-pre-tabletky/',
+          'https://www.virivkyonline.sk/revolucny-automaticky-cistic-filtrov-estelle-revolucny/'
+        ]
+      },
+      {
+        id: 'container-buildings',
+        title: 'Kontajnerové stavby – chaty, garáže, unimobunky',
+        description: 'Obytné kontajnery, showroomy, garáže a oceľové konštrukcie.',
+        urls: [
+          'https://www.virivkyonline.sk/obytny-kontajner-kancelaria-chatka/',
+          'https://www.virivkyonline.sk/modularny-kontajner-3-5--6-m-garaz/',
+          'https://www.virivkyonline.sk/modularny-kontajner-3--6-m-showroom/',
+          'https://www.virivkyonline.sk/ocelova-konstrukcia-pre-lodny-kontajner-unimobunku/'
+        ]
+      }
+    ];
+
+    const ZEALUX_VARIANTS = [
+      '11KW (229/11K)',
+      '14KW (229/14K)',
+      '17KW (229/17K)',
+      '21KW (229/21K)',
+      '26KW (229/26K)',
+      '30KW (229/30K)'
+    ];
+
+    const SLNECNIK_VARIANTS = [
+      'Antracit (232/ANT)',
+      'Šedá (232/SED)',
+      'Taupe (232/TAU)'
+    ];
+
+    const CONTAINER_COLOR_VALUES = ['Biela', 'Antracit', 'Drevodekor'];
+
+    let currentCategoryId = null;
+    let currentCategoryProducts = [];
+    let detailProduct = null;
+    let toastTimeout = null;
+    let adminClickCount = 0;
+    let adminClickTimer = null;
+
+    function showSection(name) {
+      const all = ['home', 'products', 'category', 'detail', 'favorites', 'cart', 'admin'];
+      all.forEach(section => {
+        document.getElementById('section-' + section).classList.remove('active');
+      });
+
+      ['home', 'products', 'favorites', 'cart'].forEach(id => {
+        const tab = document.getElementById('tab-' + id);
+        if (tab) tab.classList.remove('active');
+      });
+
+      document.getElementById('section-' + name).classList.add('active');
+
+      const topMap = {
+        home: 'home',
+        products: 'products',
+        category: 'products',
+        detail: 'products',
+        favorites: 'favorites',
+        cart: 'cart',
+        admin: null
+      };
+
+      const activeTop = topMap[name];
+      if (activeTop) {
+        document.getElementById('tab-' + activeTop).classList.add('active');
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message || 'Hotovo';
+      toast.classList.add('show');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function formatEur(value) {
+      const num = Number(value || 0);
+      if (!num) return 'Cena na vyžiadanie';
+      return `${num.toLocaleString('sk-SK')} €`;
+    }
+
+    function priceToDisplay(priceText) {
+      if (!priceText) return 'Cena na vyžiadanie';
+
+      const str = String(priceText).trim();
+
+      if (str.includes('€')) {
+        return str.replace(/\s+/g, ' ').trim();
+      }
+
+      const parsed = parsePriceNumber(str);
+      if (parsed > 0) return formatEur(parsed);
+
+      return str;
+    }
+
+    function parsePriceNumber(priceText) {
+      if (!priceText) return 0;
+      const cleaned = String(priceText)
+        .replace(/\u00A0/g, '')
+        .replace(/\s+/g, '')
+        .replace(',', '.')
+        .replace(/[^0-9.]/g, '');
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function getShortDescription(product) {
+      return (product.shortDescription || product.description || '').trim();
+    }
+
+    function sanitizeVariantName(name) {
+      return String(name || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function getCategoryById(id) {
+      return CATEGORIES.find(c => c.id === id) || null;
+    }
+
+    function isZealux(product) {
+      const key = (String(product?.url || '') + ' ' + String(product?.title || '')).toLowerCase();
+      return key.includes('tepelne-cerpadlo-zealux') || key.includes('zealux');
+    }
+
+    function isSlnecnik(product) {
+      const key = (String(product?.url || '') + ' ' + String(product?.title || '')).toLowerCase();
+      return key.includes('konzolovy-slnecnik') || key.includes('slnecnik') || key.includes('slnečník');
+    }
+
+    function isContainerColorProduct(product) {
+      const key = (String(product?.url || '') + ' ' + String(product?.title || '')).toLowerCase();
+      return (
+        key.includes('obytny-kontajner-kancelaria-chatka') ||
+        key.includes('modularny-kontajner-3-5--6-m-garaz') ||
+        key.includes('modularny-kontajner-3--6-m-showroom')
+      );
+    }
+
+    function getSelectedGenericVariants() {
+      const selects = document.querySelectorAll('.generic-variant');
+      const items = [];
+
+      selects.forEach(select => {
+        const name = select.getAttribute('data-variant-name') || '';
+        const value = select.value || '';
+        if (name && value) items.push({ name, value });
+      });
+
+      return items;
+    }
+
+    function collectGenericVariantText() {
+      return getSelectedGenericVariants()
+        .map(item => `${item.name}: ${item.value}`)
+        .join(' | ');
+    }
+
+    function resolveCurrentDetailPrice() {
+      if (!detailProduct) return 'Cena na vyžiadanie';
+      return priceToDisplay(detailProduct.price);
+    }
+
+    function updateDetailPriceBySelection() {
+      if (!detailProduct) return;
+      document.getElementById('detail-price').textContent = resolveCurrentDetailPrice();
+    }
+
+    function getInstallId() {
+      let installId = localStorage.getItem('pls_install_id');
+      if (!installId) {
+        installId = 'install_' + Date.now() + '_' + Math.random().toString(36).slice(2, 12);
+        localStorage.setItem('pls_install_id', installId);
+      }
+      return installId;
+    }
+
+    async function sendAppPing() {
+      try {
+        await fetch(API_BASE + '/app-ping', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            installId: getInstallId(),
+            appName: 'Platinum Lech Spa',
+            appVersion: '1.0.0',
+            platform: navigator.platform || '',
+            userAgent: navigator.userAgent || ''
+          })
+        });
+      } catch (e) {}
+    }
+
+    async function fetchProductDetail(url) {
+      const bust = Date.now() + '_' + Math.random().toString(36).slice(2);
+
+      const response = await fetch(
+        API_BASE + '/product-detail?url=' + encodeURIComponent(url) + '&_=' + bust,
+        { method: 'GET', cache: 'no-store' }
+      );
+
+      const text = await response.text();
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Worker nevrátil JSON.');
+      }
+
+      if (!response.ok || !data.success || !data.product) {
+        throw new Error(data?.error || 'Nepodarilo sa načítať detail produktu.');
+      }
+
+      return data.product;
+    }
+
+    function renderCategories() {
+      const grid = document.getElementById('category-grid');
+      grid.innerHTML = '';
+
+      CATEGORIES.forEach(category => {
+        const card = document.createElement('div');
+        card.className = 'category-card';
+        card.innerHTML = `
+          <h3>${escapeHtml(category.title)}</h3>
+          <p>${escapeHtml(category.description)}</p>
+          <button class="btn" type="button">Otvoriť kategóriu</button>
+        `;
+        card.querySelector('button').addEventListener('click', () => openCategory(category.id));
+        grid.appendChild(card);
+      });
+    }
+
+    async function openCategory(categoryId) {
+      const category = getCategoryById(categoryId);
+      if (!category) return;
+
+      currentCategoryId = categoryId;
+      currentCategoryProducts = [];
+
+      document.getElementById('category-title').textContent = category.title;
+      document.getElementById('status-category').textContent = 'Načítavam produkty...';
+      document.getElementById('products-grid').innerHTML = '';
+      document.getElementById('products-empty').style.display = 'none';
+
+      showSection('category');
+
+      const results = await Promise.allSettled(
+        category.urls.map(url => fetchProductDetail(url))
+      );
+
+      const okProducts = [];
+      let failedCount = 0;
+
+      results.forEach(result => {
+        if (result.status === 'fulfilled') okProducts.push(result.value);
+        else failedCount += 1;
+      });
+
+      currentCategoryProducts = okProducts;
+      renderProducts(currentCategoryProducts);
+
+      if (!currentCategoryProducts.length) {
+        document.getElementById('status-category').textContent = 'Nepodarilo sa načítať žiadne produkty.';
+        const empty = document.getElementById('products-empty');
+        empty.style.display = 'block';
+        empty.textContent = 'Žiadne produkty sa nepodarilo načítať.';
+        return;
+      }
+
+      if (failedCount > 0) {
+        document.getElementById('status-category').textContent =
+          `Načítané produkty: ${currentCategoryProducts.length}. Niektoré produkty sa nepodarilo načítať (${failedCount}).`;
+      } else {
+        document.getElementById('status-category').textContent =
+          `Načítané produkty: ${currentCategoryProducts.length}`;
+      }
+    }
+
+    function renderProducts(products) {
+      const grid = document.getElementById('products-grid');
+      const empty = document.getElementById('products-empty');
+
+      grid.innerHTML = '';
+
+      if (!products.length) {
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+
+      products.forEach(product => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+
+        const imageHtml = product.image
+          ? `<div class="product-image-wrap"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"></div>`
+          : `<div class="product-image-wrap"><span style="color:#cfd6e2;font-size:14px;">Bez obrázka</span></div>`;
+
+        card.innerHTML = `
+          ${imageHtml}
+          <div class="product-body">
+            <div class="product-title">${escapeHtml(product.title)}</div>
+            <div class="product-price">${escapeHtml(priceToDisplay(product.price))}</div>
+            <div class="product-desc">${escapeHtml(getShortDescription(product))}</div>
+            <div class="action-row">
+              <button class="btn" type="button">Otvoriť detail</button>
+            </div>
+          </div>
+        `;
+
+        card.querySelector('button').addEventListener('click', () => openDetailCard(product.url));
+        grid.appendChild(card);
+      });
+    }
+
+    async function openDetailCard(productUrl) {
+      showSection('detail');
+
+      const status = document.getElementById('status-detail');
+      const wrap = document.getElementById('detail-wrap');
+      const empty = document.getElementById('detail-empty');
+
+      wrap.style.display = 'none';
+      empty.style.display = 'none';
+      status.textContent = 'Načítavam detail produktu...';
+
+      try {
+        const product = await fetchProductDetail(productUrl);
+        detailProduct = product;
+        renderDetail(product);
+        wrap.style.display = 'block';
+        status.textContent = 'Detail načítaný.';
+      } catch (error) {
+        detailProduct = null;
+        status.textContent = 'Chyba pri načítaní detailu: ' + (error.message || 'Neznáma chyba');
+        empty.style.display = 'block';
+      }
+    }
+
+    function renderDetail(product) {
+      document.getElementById('detail-title').textContent = product.title || '';
+      document.getElementById('detail-description').textContent = product.description || product.shortDescription || '';
+
+      const mainImage = document.getElementById('detail-main-image');
+      if (product.image) {
+        mainImage.innerHTML = `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}">`;
+      } else {
+        mainImage.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#cfd6e2;">Bez obrázka</div>`;
+      }
+
+      const oblozenieWrap = document.getElementById('variant-oblozenie-wrap');
+      const akrylWrap = document.getElementById('variant-akryl-wrap');
+      const oblozenieSelect = document.getElementById('variant-oblozenie');
+      const akrylSelect = document.getElementById('variant-akryl');
+      const genericWrap = document.getElementById('generic-variants-wrap');
+
+      oblozenieSelect.innerHTML = '';
+      akrylSelect.innerHTML = '';
+      genericWrap.innerHTML = '';
+
+      const oblozenie = Array.isArray(product?.variants?.oblozenie) ? product.variants.oblozenie : [];
+      const akryl = Array.isArray(product?.variants?.akryl) ? product.variants.akryl : [];
+      const generic = Array.isArray(product?.variants?.generic) ? [...product.variants.generic] : [];
+
+      if (oblozenie.length) {
+        oblozenieWrap.style.display = 'block';
+        oblozenieSelect.innerHTML = oblozenie.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+      } else {
+        oblozenieWrap.style.display = 'none';
+      }
+
+      if (akryl.length) {
+        akrylWrap.style.display = 'block';
+        akrylSelect.innerHTML = akryl.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+      } else {
+        akrylWrap.style.display = 'none';
+      }
+
+      if (isZealux(product)) {
+        const hasVykon = generic.some(g => String(g?.name || '').toLowerCase().includes('výkon') || String(g?.name || '').toLowerCase().includes('vykon'));
+        if (!hasVykon) {
+          generic.push({ name: 'Výkon', values: ZEALUX_VARIANTS });
+        }
+      }
+
+      if (isSlnecnik(product)) {
+        const hasFarba = generic.some(g => String(g?.name || '').toLowerCase().includes('farba'));
+        if (!hasFarba) {
+          generic.push({ name: 'Farba', values: SLNECNIK_VARIANTS });
+        }
+      }
+
+      if (isContainerColorProduct(product)) {
+        const hasFarba = generic.some(g => String(g?.name || '').toLowerCase().includes('farba'));
+        if (!hasFarba) {
+          generic.push({ name: 'Farba', values: CONTAINER_COLOR_VALUES });
+        }
+      }
+
+      const genericSeen = new Set();
+
+      generic.forEach(group => {
+        const name = sanitizeVariantName(group?.name || '');
+        const values = Array.isArray(group?.values) ? group.values.filter(v => String(v || '').trim()) : [];
+        if (!name || !values.length) return;
+
+        const lower = name.toLowerCase();
+
+        if (
+          lower.includes('farba obloženia') ||
+          lower.includes('farba oblozenia') ||
+          lower.includes('obloženie') ||
+          lower.includes('oblozenie') ||
+          lower.includes('farba akrylu') ||
+          lower === 'akryl'
+        ) {
+          return;
+        }
+
+        const key = lower + '|' + values.join('|').toLowerCase();
+        if (genericSeen.has(key)) return;
+        genericSeen.add(key);
+
+        const block = document.createElement('div');
+        block.className = 'variant-block';
+        block.innerHTML = `
+          <div class="variant-label">${escapeHtml(name)}</div>
+          <select class="variant-select generic-variant" data-variant-name="${escapeHtml(name)}">
+            ${values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('')}
+          </select>
+        `;
+        genericWrap.appendChild(block);
+      });
+
+      document.querySelectorAll('.generic-variant').forEach(select => {
+        select.addEventListener('change', updateDetailPriceBySelection);
+      });
+
+      document.getElementById('detail-qty').value = 1;
+      updateDetailPriceBySelection();
+    }
+
+    function backToCurrentCategory() {
+      if (currentCategoryId) {
+        showSection('category');
+      } else {
+        showSection('products');
+      }
+    }
+
+    function getCart() {
+      try {
+        return JSON.parse(localStorage.getItem('platinum_cart') || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function saveCart(cart) {
+      localStorage.setItem('platinum_cart', JSON.stringify(cart));
+    }
+
+    function addDetailToCart() {
+      if (!detailProduct) return;
+
+      const qty = Math.max(1, parseInt(document.getElementById('detail-qty').value || '1', 10));
+      const oblozenieEl = document.getElementById('variant-oblozenie');
+      const akrylEl = document.getElementById('variant-akryl');
+
+      const item = {
+        id: detailProduct.url + '|' + collectGenericVariantText() + '|' + (oblozenieEl?.value || '') + '|' + (akrylEl?.value || ''),
+        url: detailProduct.url,
+        title: detailProduct.title,
+        price: resolveCurrentDetailPrice(),
+        image: detailProduct.image || '',
+        qty,
+        oblozenie: oblozenieEl && oblozenieEl.parentElement.style.display !== 'none' ? oblozenieEl.value : '',
+        akryl: akrylEl && akrylEl.parentElement.style.display !== 'none' ? akrylEl.value : '',
+        variantText: collectGenericVariantText()
+      };
+
+      const cart = getCart();
+      cart.push(item);
+      saveCart(cart);
+      renderCart();
+      showToast('Pridané do košíka');
+    }
+
+    function removeCartItem(index) {
+      const cart = getCart();
+      cart.splice(index, 1);
+      saveCart(cart);
+      renderCart();
+    }
+
+    function updateCartQty(index, qty) {
+      const cart = getCart();
+      if (!cart[index]) return;
+      cart[index].qty = Math.max(1, parseInt(qty || 1, 10));
+      saveCart(cart);
+      renderCart();
+    }
+
+    function clearCart() {
+      localStorage.removeItem('platinum_cart');
+      renderCart();
+      document.getElementById('order-status').textContent = 'Košík bol vymazaný.';
+      showToast('Košík vymazaný');
+    }
+
+    function renderCart() {
+      const cart = getCart();
+      const list = document.getElementById('cart-list');
+      const totalEl = document.getElementById('cart-total');
+
+      list.innerHTML = '';
+
+      if (!cart.length) {
+        list.innerHTML = '<div class="empty-state">Košík je zatiaľ prázdny.</div>';
+        totalEl.textContent = 'Spolu: 0 €';
+        return;
+      }
+
+      let total = 0;
+
+      cart.forEach((item, index) => {
+        const price = parsePriceNumber(item.price);
+        const qty = Math.max(1, parseInt(item.qty || 1, 10));
+        total += price * qty;
+
+        const div = document.createElement('div');
+        div.className = 'cart-item';
+        div.innerHTML = `
+          <div class="cart-thumb">
+            ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}">` : ''}
+          </div>
+          <div>
+            <div class="cart-title">${escapeHtml(item.title)}</div>
+            <div class="cart-meta">
+              Cena: ${escapeHtml(priceToDisplay(item.price))}<br>
+              ${item.oblozenie ? 'Farba obloženia: ' + escapeHtml(item.oblozenie) + '<br>' : ''}
+              ${item.akryl ? 'Farba akrylu: ' + escapeHtml(item.akryl) + '<br>' : ''}
+              ${item.variantText ? 'Variant: ' + escapeHtml(item.variantText) + '<br>' : ''}
+            </div>
+            <div class="inline-row">
+              <input class="qty-input" type="number" min="1" value="${qty}" onchange="updateCartQty(${index}, this.value)">
+              <button class="btn danger" type="button" onclick="removeCartItem(${index})">Odstrániť</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+
+      totalEl.textContent = 'Spolu: ' + formatEur(total);
+    }
+
+    function getFavorites() {
+      try {
+        return JSON.parse(localStorage.getItem('platinum_favorites') || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    function saveFavorites(favorites) {
+      localStorage.setItem('platinum_favorites', JSON.stringify(favorites));
+    }
+
+    function saveDetailToFavorites() {
+      if (!detailProduct) return;
+
+      const oblozenieEl = document.getElementById('variant-oblozenie');
+      const akrylEl = document.getElementById('variant-akryl');
+
+      const item = {
+        id: detailProduct.url + '|' + collectGenericVariantText() + '|' + (oblozenieEl?.value || '') + '|' + (akrylEl?.value || ''),
+        url: detailProduct.url,
+        title: detailProduct.title,
+        price: resolveCurrentDetailPrice(),
+        image: detailProduct.image || '',
+        oblozenie: oblozenieEl && oblozenieEl.parentElement.style.display !== 'none' ? oblozenieEl.value : '',
+        akryl: akrylEl && akrylEl.parentElement.style.display !== 'none' ? akrylEl.value : '',
+        variantText: collectGenericVariantText()
+      };
+
+      const favorites = getFavorites();
+      const exists = favorites.some(f => f.id === item.id);
+
+      if (exists) {
+        showToast('Produkt už je v obľúbených');
+        return;
+      }
+
+      favorites.push(item);
+      saveFavorites(favorites);
+      renderFavorites();
+      showToast('Uložené do obľúbených');
+    }
+
+    function addFavoriteToCart(index) {
+      const favorites = getFavorites();
+      const item = favorites[index];
+      if (!item) return;
+
+      const cart = getCart();
+      cart.push({
+        ...item,
+        qty: 1
+      });
+      saveCart(cart);
+      renderCart();
+      showToast('Pridané do košíka');
+    }
+
+    function removeFavorite(index) {
+      const favorites = getFavorites();
+      favorites.splice(index, 1);
+      saveFavorites(favorites);
+      renderFavorites();
+    }
+
+    function clearFavorites() {
+      localStorage.removeItem('platinum_favorites');
+      renderFavorites();
+      showToast('Obľúbené vymazané');
+    }
+
+    function renderFavorites() {
+      const favorites = getFavorites();
+      const list = document.getElementById('favorites-list');
+      list.innerHTML = '';
+
+      if (!favorites.length) {
+        list.innerHTML = '<div class="empty-state">Zatiaľ nemáte uložené žiadne obľúbené produkty.</div>';
+        return;
+      }
+
+      favorites.forEach((item, index) => {
+        const safeUrl = String(item.url || '').replace(/'/g, "\\'");
+        const div = document.createElement('div');
+        div.className = 'favorite-item';
+        div.innerHTML = `
+          <div class="favorite-thumb">
+            ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}">` : ''}
+          </div>
+          <div>
+            <div class="favorite-title">${escapeHtml(item.title)}</div>
+            <div class="favorite-meta">
+              Cena: ${escapeHtml(priceToDisplay(item.price))}<br>
+              ${item.oblozenie ? 'Farba obloženia: ' + escapeHtml(item.oblozenie) + '<br>' : ''}
+              ${item.akryl ? 'Farba akrylu: ' + escapeHtml(item.akryl) + '<br>' : ''}
+              ${item.variantText ? 'Variant: ' + escapeHtml(item.variantText) + '<br>' : ''}
+            </div>
+            <div class="inline-row">
+              <button class="btn" type="button" onclick="addFavoriteToCart(${index})">Pridať do košíka</button>
+              <button class="btn secondary" type="button" onclick="openDetailCard('${safeUrl}')">Detail</button>
+              <button class="btn danger" type="button" onclick="removeFavorite(${index})">Odstrániť</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function getCustomerData() {
+      try {
+        return JSON.parse(localStorage.getItem('platinum_customer_data') || '{}');
+      } catch {
+        return {};
+      }
+    }
+
+    function saveCustomerData(data) {
+      localStorage.setItem('platinum_customer_data', JSON.stringify(data));
+    }
+
+    function fillCustomerData() {
+      const data = getCustomerData();
+      const ids = [
+        'order_name',
+        'order_email',
+        'order_phone',
+        'order_street',
+        'order_house_number',
+        'order_zip',
+        'order_city'
+      ];
+
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && data[id]) el.value = data[id];
+      });
+    }
+
+    function clearCustomerData() {
+      localStorage.removeItem('platinum_customer_data');
+      ['order_name','order_email','order_phone','order_street','order_house_number','order_zip','order_city','order_note']
+        .forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+      showToast('Údaje zákazníka vymazané');
+    }
+
+    async function loadAdminStats() {
+      const status = document.getElementById('admin-status');
+      status.textContent = 'Načítavam admin štatistiky...';
+
+      try {
+        const response = await fetch(
+          API_BASE + '/admin-stats?pin=' + encodeURIComponent(ADMIN_PIN) + '&_=' + Date.now(),
+          { method: 'GET', cache: 'no-store' }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success || !data.stats) {
+          alert('Nepodarilo sa načítať admin štatistiky.');
+          status.textContent = 'Chyba pri načítaní admin štatistík.';
+          return;
+        }
+
+        document.getElementById('admin-total').textContent = data.stats.totalInstalls ?? data.stats.total ?? 0;
+        document.getElementById('admin-today').textContent = data.stats.activeToday ?? data.stats.today ?? 0;
+        document.getElementById('admin-7d').textContent = data.stats.active7d ?? data.stats.days7 ?? 0;
+        document.getElementById('admin-30d').textContent = data.stats.active30d ?? data.stats.days30 ?? 0;
+        document.getElementById('admin-180d').textContent = data.stats.active180d ?? data.stats.days180 ?? 0;
+        document.getElementById('admin-365d').textContent = data.stats.active365d ?? data.stats.days365 ?? 0;
+
+        showSection('admin');
+        status.textContent = 'Admin štatistiky načítané.';
+      } catch (e) {
+        status.textContent = 'Chyba pri načítaní admin štatistík.';
+        alert('Chyba pri načítaní admin štatistík.');
+      }
+    }
+
+    function initHiddenAdmin() {
+      const logo = document.getElementById('adminLogo');
+      if (!logo) return;
+
+      logo.addEventListener('click', function() {
+        adminClickCount += 1;
+
+        if (adminClickTimer) clearTimeout(adminClickTimer);
+
+        adminClickTimer = setTimeout(() => {
+          adminClickCount = 0;
+        }, 1800);
+
+        if (adminClickCount >= 5) {
+          adminClickCount = 0;
+          const entered = prompt('Zadaj admin PIN');
+          if (entered === ADMIN_PIN) {
+            loadAdminStats();
+          } else if (entered !== null) {
+            alert('Nesprávny PIN');
+          }
+        }
+      });
+    }
+
+    document.getElementById('orderForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const cart = getCart();
+      const status = document.getElementById('order-status');
+
+      if (!cart.length) {
+        status.textContent = 'Košík je prázdny.';
+        return;
+      }
+
+      const meno = document.getElementById('order_name').value.trim();
+      const email = document.getElementById('order_email').value.trim();
+      const phone = document.getElementById('order_phone').value.trim();
+      const street = document.getElementById('order_street').value.trim();
+      const houseNumber = document.getElementById('order_house_number').value.trim();
+      const zip = document.getElementById('order_zip').value.trim();
+      const city = document.getElementById('order_city').value.trim();
+      const note = document.getElementById('order_note').value.trim();
+
+      if (!meno || !email || !phone || !street || !houseNumber || !zip || !city) {
+        status.textContent = 'Vyplň všetky povinné údaje.';
+        return;
+      }
+
+      const phoneClean = phone.replace(/\s+/g, '');
+      if (!/^09\d{8}$/.test(phoneClean)) {
+        status.textContent = 'Telefónne číslo musí mať 10 číslic a začínať na 09.';
+        return;
+      }
+
+      const zipClean = zip.replace(/\s+/g, '');
+      if (!/^\d{5}$/.test(zipClean)) {
+        status.textContent = 'PSČ musí mať 5 číslic.';
+        return;
+      }
+
+      saveCustomerData({
+        order_name: meno,
+        order_email: email,
+        order_phone: phoneClean,
+        order_street: street,
+        order_house_number: houseNumber,
+        order_zip: zipClean,
+        order_city: city
+      });
+
+      status.textContent = 'Odosielam objednávku...';
+
+      try {
+        const response = await fetch(API_BASE + '/order?_=order_' + Date.now(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            meno,
+            email,
+            phone: phoneClean,
+            street,
+            houseNumber,
+            zip: zipClean,
+            city,
+            note,
+            items: cart
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          status.textContent = 'Objednávka bola úspešne odoslaná.';
+          localStorage.removeItem('platinum_cart');
+          renderCart();
+          document.getElementById('order_note').value = '';
+          showToast('Objednávka odoslaná');
+        } else {
+          status.textContent = 'Chyba: ' + (data.detail || data.error || 'Odoslanie objednávky zlyhalo.');
+        }
+      } catch (error) {
+        status.textContent = 'Chyba spojenia so serverom.';
+      }
+    });
+
+    sendAppPing();
+    renderCategories();
+    renderCart();
+    renderFavorites();
+    fillCustomerData();
+    initHiddenAdmin();
+  </script>
+</body>
+                                                              </html>
